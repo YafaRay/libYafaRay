@@ -78,12 +78,12 @@ ParamMap SppmIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SppmIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> SppmIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<SppmIntegrator>(logger, param_result, name, param_map)};
+	auto integrator {new SppmIntegrator(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_result};
+	return {integrator, param_result};
 }
 
 SppmIntegrator::SppmIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
@@ -95,7 +95,7 @@ SppmIntegrator::SppmIntegrator(Logger &logger, ParamResult &param_result, const 
 	getDiffuseMap()->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const
+bool SppmIntegrator::render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
@@ -107,7 +107,6 @@ bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsi
 
 	render_control.setTotalPasses(params_.num_passes_);	//passNum is total number of passes in SPPM
 
-	float aa_sample_multiplier = 1.f;
 	float aa_light_sample_multiplier = 1.f;
 	float aa_indirect_sample_multiplier = 1.f;
 
@@ -160,10 +159,10 @@ bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsi
 	if(render_control.resumed())
 	{
 		acum_aa_samples = image_film->getSamplingOffset();
-		renderPass(image_film, fast_random, correlative_sample_number, 0, acum_aa_samples, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(image_film, correlative_sample_number, 0, acum_aa_samples, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 	}
 	else
-		renderPass(image_film, fast_random, correlative_sample_number, 1, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(image_film, correlative_sample_number, 1, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 	std::string initial_estimate = "no";
 	if(pm_ire_) initial_estimate = "yes";
@@ -178,7 +177,7 @@ bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsi
 		pass_info = i + 1;
 		image_film->nextPass(false, getName(), edge_toon_params_);
 		n_refined_ = 0;
-		renderPass(image_film, fast_random, correlative_sample_number, 1, acum_aa_samples, false, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(image_film, correlative_sample_number, 1, acum_aa_samples, false, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
 		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
@@ -204,7 +203,7 @@ bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsi
 }
 
 
-bool SppmIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+bool SppmIntegrator::renderTile(ImageFilm *image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	const int camera_res_x = image_film->getCamera()->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -229,7 +228,7 @@ bool SppmIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, 
 			PixelSamplingData pixel_sampling_data;
 			pixel_sampling_data.number_ = camera_res_x * i + j;
 			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			float toff = Halton::lowDiscrepancySampling(fast_random, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
+			float toff = Halton::lowDiscrepancySampling(fast_random_, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
 			for(int sample = 0; sample < n_samples; ++sample) //set n_samples = 1.
 			{
 				pixel_sampling_data.sample_ = pass_offs + sample;
@@ -245,8 +244,8 @@ bool SppmIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, 
 				if(sample_lns)
 				{
 					lens_uv = {
-							static_cast<float>(Halton::lowDiscrepancySampling(fast_random, 3, pixel_sampling_data.sample_ + pixel_sampling_data.offset_)),
-							static_cast<float>(Halton::lowDiscrepancySampling(fast_random, 4, pixel_sampling_data.sample_ + pixel_sampling_data.offset_))
+							static_cast<float>(Halton::lowDiscrepancySampling(fast_random_, 3, pixel_sampling_data.sample_ + pixel_sampling_data.offset_)),
+							static_cast<float>(Halton::lowDiscrepancySampling(fast_random_, 4, pixel_sampling_data.sample_ + pixel_sampling_data.offset_))
 					};
 				}
 				CameraRay camera_ray = image_film->getCamera()->shootRay(static_cast<float>(j) + dx, static_cast<float>(i) + dy, lens_uv); // wt need to be considered
@@ -272,7 +271,7 @@ bool SppmIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, 
 				const int index = ((i - y_start_film) * image_film->getCamera()->resX()) + (j - x_start_film);
 				HitPoint &hp = hit_points_[index];
 				RayDivision ray_division;
-				const GatherInfo g_info = traceGatherRay(camera_ray.ray_, hp, fast_random, random_generator, &color_layers, thread_id, 0, image_film->getCamera(), true, 0.f, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
+				const GatherInfo g_info = traceGatherRay(camera_ray.ray_, hp, random_generator, &color_layers, thread_id, 0, image_film->getCamera(), true, aa_light_sample_multiplier, 0.f, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 				hp.constant_randiance_ += g_info.constant_randiance_; // accumulate the constant radiance for later usage.
 				// progressive refinement
 				const float alpha = 0.7f; // another common choice is 0.8, seems not changed much.
@@ -349,7 +348,7 @@ bool SppmIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, 
 	return true;
 }
 
-void SppmIntegrator::photonWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step) const
+void SppmIntegrator::photonWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -378,7 +377,7 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, FastRandom &fas
 	while(!done)
 	{
 		unsigned int haltoncurr = curr + n_photons_thread * thread_id;
-		const float wavelength = Halton::lowDiscrepancySampling(fast_random, 5, haltoncurr);
+		const float wavelength = Halton::lowDiscrepancySampling(fast_random_, 5, haltoncurr);
 
 		// Tried LD, get bad and strange results for some stategy.
 		mutex_.lock();
@@ -454,9 +453,9 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, FastRandom &fas
 			if(n_bounces == params_.bounces_) break;
 
 			// scatter photon
-			const float s_5 = fast_random.getNextFloatNormalized(); // now should use this to see correctness
-			const float s_6 = fast_random.getNextFloatNormalized();
-			const float s_7 = fast_random.getNextFloatNormalized();
+			const float s_5 = fast_random_.getNextFloatNormalized(); // now should use this to see correctness
+			const float s_6 = fast_random_.getNextFloatNormalized();
+			const float s_7 = fast_random_.getNextFloatNormalized();
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::All, pcol, transm);
 
@@ -503,7 +502,7 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, FastRandom &fas
 
 
 //photon pass, scatter photon
-void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int samples, int offset, bool adaptive) const
+void SppmIntegrator::prePass(ImageFilm *image_film, int samples, int offset, bool adaptive)
 {
 	if(getLights().empty()) return;
 	auto &render_control{image_film->getRenderControl()};
@@ -562,7 +561,7 @@ void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int
 
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_photons_);
-	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(render_control), std::ref(fast_random), std::ref(curr), i, num_lights, light_power_d.get(), getLights(), pb_step);
+	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(render_control), std::ref(curr), i, num_lights, light_power_d.get(), getLights(), pb_step);
 	for(auto &t : threads) t.join();
 
 	render_control.setProgressBarAsDone();
@@ -613,12 +612,12 @@ void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int
 }
 
 //now it's a dummy function
-std::pair<Rgb, float> SppmIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+std::pair<Rgb, float> SppmIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	return {Rgb{0.f}, 0.f};
 }
 
-GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, const Camera *camera, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const
+GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, const Camera *camera, bool chromatic_enabled, float aa_light_sample_multiplier, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	GatherInfo g_info;
 	float alpha = MonteCarloIntegrator::params_.transparent_background_ ? 0.f : 1.f;
@@ -783,8 +782,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						if(ray_division.division_ > 1) wavelength_dispersive = math::addMod1(wavelength_dispersive, ray_division.decorrelation_1_);
 					}
 					else wavelength_dispersive = 0.f;
-					ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(fast_random, 2 * ray_level + 1, branch + pixel_sampling_data.offset_);
-					ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(fast_random, 2 * ray_level + 2, branch + pixel_sampling_data.offset_);
+					ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(fast_random_, 2 * ray_level + 1, branch + pixel_sampling_data.offset_);
+					ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(fast_random_, 2 * ray_level + 2, branch + pixel_sampling_data.offset_);
 					ray_division_new.offset_ = branch;
 					++branch;
 					Sample s(0.5f, 0.5f, BsdfFlags::Reflect | BsdfFlags::Transmit | BsdfFlags::Dispersive);
@@ -795,7 +794,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 					{
 						const Rgb wl_col = spectrum::wl2Rgb(wavelength_dispersive);
 						ref_ray = {sp->p_, wi, ray.time_, ray_min_dist_};
-						t_cing = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, false, wavelength_dispersive, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
+						t_cing = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, false, aa_light_sample_multiplier, wavelength_dispersive, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						t_cing.photon_flux_ *= mcol * wl_col * w;
 						t_cing.constant_randiance_ *= mcol * wl_col * w;
 						if(color_layers)
@@ -847,8 +846,8 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 
 				for(int ns = 0; ns < ray_samples_glossy; ++ns)
 				{
-					ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(fast_random, 2 * ray_level + 1, branch + pixel_sampling_data.offset_);
-					ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(fast_random, 2 * ray_level + 2, branch + pixel_sampling_data.offset_);
+					ray_division_new.decorrelation_1_ = Halton::lowDiscrepancySampling(fast_random_, 2 * ray_level + 1, branch + pixel_sampling_data.offset_);
+					ray_division_new.decorrelation_2_ = Halton::lowDiscrepancySampling(fast_random_, 2 * ray_level + 2, branch + pixel_sampling_data.offset_);
 					ray_division_new.offset_ = branch;
 					++offs;
 					++branch;
@@ -872,7 +871,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 						if(s.sampled_flags_.has(BsdfFlags::Reflect)) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 						else if(s.sampled_flags_.has(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 						//gcol += tmpColorPasses.probe_add(PASS_INT_GLOSSY_INDIRECT, (Rgb)integ * mcol * W, state.ray_level == 1);
-						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
+						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						trace_gather_ray.photon_flux_ *= mcol * w;
 						trace_gather_ray.constant_randiance_ *= mcol * w;
 						gather_info += trace_gather_ray;
@@ -889,7 +888,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 							Ray ref_ray{sp->p_, dir[0], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_);
 							const Rgb col_reflect_factor = mcol[0] * w[0];
-							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
+							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 							trace_gather_ray.photon_flux_ *= col_reflect_factor;
 							trace_gather_ray.constant_randiance_ *= col_reflect_factor;
 							if(color_layers)
@@ -904,7 +903,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 							Ray ref_ray{sp->p_, dir[1], ray.time_, ray_min_dist_};
 							ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 							const Rgb col_transmit_factor = mcol[1] * w[1];
-							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
+							GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 							trace_gather_ray.photon_flux_ *= col_transmit_factor;
 							trace_gather_ray.constant_randiance_ *= col_transmit_factor;
 							if(color_layers)
@@ -924,7 +923,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 							else if(s.sampled_flags_.has(BsdfFlags::Transmit)) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
 						}
 
-						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
+						GatherInfo trace_gather_ray = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division_new, pixel_sampling_data, object_index_highest, material_index_highest);
 						trace_gather_ray.photon_flux_ *= mcol * W;
 						trace_gather_ray.constant_randiance_ *= mcol * W;
 						if(color_layers)
@@ -974,7 +973,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				{
 					Ray ref_ray{sp->p_, specular.reflect_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->reflectedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_); // compute the ray differentaitl
-					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
+					GatherInfo refg = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(mat_bsdfs.has(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))
@@ -997,7 +996,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 				{
 					Ray ref_ray{sp->p_, specular.refract_->dir_, ray.time_, ray_min_dist_};
 					if(ray.differentials_) ref_ray.differentials_ = sp->refractedRay(ray.differentials_.get(), ray.dir_, ref_ray.dir_, sp->getMaterial()->getMatIor());
-					GatherInfo refg = traceGatherRay(ref_ray, hp, fast_random, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
+					GatherInfo refg = traceGatherRay(ref_ray, hp, random_generator, nullptr, thread_id, ray_level, camera, chromatic_enabled, aa_light_sample_multiplier, wavelength, ray_division, pixel_sampling_data, object_index_highest, material_index_highest);
 					if(mat_bsdfs.has(BsdfFlags::Volumetric))
 					{
 						if(const VolumeHandler *vol = sp->getMaterial()->getVolumeHandler(sp->ng_ * ref_ray.dir_ < 0))

@@ -324,7 +324,7 @@ int main()
 	yafaray_setParamMapInt(yi, "height", 270);
 	yafaray_setParamMapInt(yi, "xstart", 0);
 	yafaray_setParamMapInt(yi, "ystart", 0);
-	yafaray_setupRender(yi);
+	yafaray_preprocessSurfaceIntegrator(yi);
 	yafaray_clearParamMap(param_map);
 
 	/* Creating image output */

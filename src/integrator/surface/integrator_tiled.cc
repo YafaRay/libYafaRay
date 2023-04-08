@@ -43,14 +43,14 @@
 
 namespace yafaray {
 
-void TiledIntegrator::renderWorker(ImageFilm *image_film, ThreadControl *control, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+void TiledIntegrator::renderWorker(ImageFilm *image_film, ThreadControl *control, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	RenderArea a;
 
 	while(image_film->nextArea(a))
 	{
 		if(image_film->getRenderControl().canceled()) break;
-		renderTile(image_film, fast_random, correlative_sample_number, a, samples, offset, adaptive, thread_id, aa_pass, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderTile(image_film, correlative_sample_number, a, samples, offset, adaptive, thread_id, aa_pass, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 		std::unique_lock<std::mutex> lk(control->m_);
 		control->areas_.emplace_back(a);
@@ -95,7 +95,7 @@ void TiledIntegrator::precalcDepths(ImageFilm *image_film) const
 	image_film->setMaxDepthInverse(max_depth);
 }
 
-bool TiledIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const
+bool TiledIntegrator::render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
@@ -166,10 +166,10 @@ bool TiledIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, uns
 
 	if(render_control.resumed())
 	{
-		renderPass(image_film, fast_random, correlative_sample_number, 0, image_film->getSamplingOffset(), false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(image_film, correlative_sample_number, 0, image_film->getSamplingOffset(), false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 	}
 	else
-		renderPass(image_film, fast_random, correlative_sample_number, aa_noise_params_.samples_, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(image_film, correlative_sample_number, aa_noise_params_.samples_, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 	bool aa_threshold_changed = true;
 	int acum_aa_samples = aa_noise_params_.samples_;
@@ -200,7 +200,7 @@ bool TiledIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, uns
 
 		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_.samples_, " AA_samples_mult=", aa_samples_mult);
 
-		if(resampled_pixels > 0) renderPass(image_film, fast_random, correlative_sample_number, aa_samples_mult, acum_aa_samples, true, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		if(resampled_pixels > 0) renderPass(image_film, correlative_sample_number, aa_samples_mult, acum_aa_samples, true, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 		acum_aa_samples += aa_samples_mult;
 
@@ -222,11 +222,11 @@ bool TiledIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, uns
 }
 
 
-bool TiledIntegrator::renderPass(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+bool TiledIntegrator::renderPass(ImageFilm *image_film, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	if(logger_.isDebug())logger_.logDebug("Sampling: samples=", samples, " Offset=", offset, " Base Offset=", + image_film->getBaseSamplingOffset(), "  AA_pass_number=", aa_pass_number);
 
-	prePass(image_film, fast_random, samples, (offset + image_film->getBaseSamplingOffset()), adaptive);
+	prePass(image_film, samples, (offset + image_film->getBaseSamplingOffset()), adaptive);
 
 	image_film->getRenderControl().setCurrentPass(aa_pass_number + 1);
 
@@ -235,7 +235,7 @@ bool TiledIntegrator::renderPass(ImageFilm *image_film, FastRandom &fast_random,
 	ThreadControl tc;
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_);
-	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, image_film, &tc, std::ref(fast_random), std::ref(correlative_sample_number), i, samples, (offset + image_film->getBaseSamplingOffset()), adaptive, aa_pass_number, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+	for(int i = 0; i < num_threads_; ++i) threads.emplace_back(&TiledIntegrator::renderWorker, this, image_film, &tc, std::ref(correlative_sample_number), i, samples, (offset + image_film->getBaseSamplingOffset()), adaptive, aa_pass_number, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 	std::unique_lock<std::mutex> lk(tc.m_);
 	while(tc.finished_threads_ < num_threads_)
@@ -253,7 +253,7 @@ bool TiledIntegrator::renderPass(ImageFilm *image_film, FastRandom &fast_random,
 	return true; //hm...quite useless the return value :)
 }
 
-bool TiledIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+bool TiledIntegrator::renderTile(ImageFilm *image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	const int camera_res_x = image_film->getCamera()->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -297,7 +297,7 @@ bool TiledIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random,
 			PixelSamplingData pixel_sampling_data;
 			pixel_sampling_data.number_ = camera_res_x * i + j;
 			pixel_sampling_data.offset_ = sample::fnv32ABuf(i * sample::fnv32ABuf(j)); //fnv_32a_buf(rstate.pixelNumber);
-			const float toff = Halton::lowDiscrepancySampling(fast_random, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
+			const float toff = Halton::lowDiscrepancySampling(fast_random_, 5, pass_offs + pixel_sampling_data.offset_); // **shall be just the pass number...**
 			hal.u_.setStart(pass_offs + pixel_sampling_data.offset_);
 			hal.v_.setStart(pass_offs + pixel_sampling_data.offset_);
 			for(int sample = 0; sample < n_samples_adjusted; ++sample)
@@ -344,7 +344,7 @@ bool TiledIntegrator::renderTile(ImageFilm *image_film, FastRandom &fast_random,
 				}
 				camera_ray.ray_.time_ = time;
 				RayDivision ray_division;
-				const auto [integ_col, integ_alpha] = integrate(image_film, camera_ray.ray_, fast_random, random_generator, correlative_sample_number, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+				const auto [integ_col, integ_alpha] = integrate(image_film, camera_ray.ray_, random_generator, correlative_sample_number, &color_layers, thread_id, 0, true, 0.f, 0, ray_division, pixel_sampling_data, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 				color_layers(LayerDef::Combined) = {integ_col, integ_alpha};
 				for(auto &[layer_def, layer_col] : color_layers)
 				{

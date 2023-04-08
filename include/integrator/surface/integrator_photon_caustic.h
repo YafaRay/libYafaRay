@@ -55,8 +55,8 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 		~CausticPhotonIntegrator() override;
 		void enableCaustics(const bool caustics) { use_photon_caustics_ = caustics; }
 		/*! Creates and prepares the caustic photon map */
-		bool createCausticMap(RenderControl &render_control, FastRandom &fast_random);
-		void causticWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step);
+		bool createCausticMap(RenderControl &render_control);
+		void causticWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step);
 		/*! Estimates caustic photons for a given surface point */
 		static Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3f &wo, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
 		static Rgb causticPhotons(ColorLayers *color_layers, const Ray &ray, const SurfacePoint &sp, const Vec3f &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);

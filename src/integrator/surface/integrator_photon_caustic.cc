@@ -98,7 +98,7 @@ Rgb CausticPhotonIntegrator::causticPhotons(ColorLayers *color_layers, const Ray
 	return col;
 }
 
-void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
+void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
 {
 	bool done = false;
 	const int num_lights_caustic = lights_caustic.size();
@@ -114,9 +114,9 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastR
 		const unsigned int haltoncurr = curr + n_caus_photons_thread * thread_id;
 		const float wavelength = sample::riS(haltoncurr);
 		const float s_1 = sample::riVdC(haltoncurr);
-		const float s_2 = Halton::lowDiscrepancySampling(fast_random, 2, haltoncurr);
-		const float s_3 = Halton::lowDiscrepancySampling(fast_random, 3, haltoncurr);
-		const float s_4 = Halton::lowDiscrepancySampling(fast_random, 4, haltoncurr);
+		const float s_2 = Halton::lowDiscrepancySampling(fast_random_, 2, haltoncurr);
+		const float s_3 = Halton::lowDiscrepancySampling(fast_random_, 3, haltoncurr);
+		const float s_4 = Halton::lowDiscrepancySampling(fast_random_, 4, haltoncurr);
 		const float s_l = static_cast<float>(haltoncurr) / static_cast<float>(n_caus_photons_);
 		const auto [light_num, light_num_pdf]{light_power_d_caustic->dSample(s_l)};
 		if(light_num >= num_lights_caustic)
@@ -175,9 +175,9 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastR
 			const int d_5 = 3 * n_bounces + 5;
 			//int d6 = d5 + 1;
 
-			const float s_5 = Halton::lowDiscrepancySampling(fast_random, d_5, haltoncurr);
-			const float s_6 = Halton::lowDiscrepancySampling(fast_random, d_5 + 1, haltoncurr);
-			const float s_7 = Halton::lowDiscrepancySampling(fast_random, d_5 + 2, haltoncurr);
+			const float s_5 = Halton::lowDiscrepancySampling(fast_random_, d_5, haltoncurr);
+			const float s_6 = Halton::lowDiscrepancySampling(fast_random_, d_5 + 1, haltoncurr);
+			const float s_7 = Halton::lowDiscrepancySampling(fast_random_, d_5 + 2, haltoncurr);
 
 			PSample sample(s_5, s_6, s_7, BsdfFlags::AllSpecular | BsdfFlags::Glossy | BsdfFlags::Filter | BsdfFlags::Dispersive, pcol, transm);
 			Vec3f wo;
@@ -220,7 +220,7 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastR
 	getCausticMap()->unlock();
 }
 
-bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, FastRandom &fast_random)
+bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control)
 {
 	getCausticMap()->clear();
 	getCausticMap()->setNumPaths(0);
@@ -259,7 +259,7 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, Fa
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(fast_random), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
 		render_control.setProgressBarAsDone();

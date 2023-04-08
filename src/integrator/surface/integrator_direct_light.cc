@@ -38,12 +38,12 @@ ParamMap DirectLightIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> DirectLightIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> DirectLightIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<DirectLightIntegrator>(logger, param_result, name, param_map)};
+	auto integrator {new DirectLightIntegrator(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_result};
+	return {integrator, param_result};
 }
 
 DirectLightIntegrator::DirectLightIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map)
@@ -51,9 +51,9 @@ DirectLightIntegrator::DirectLightIntegrator(Logger &logger, ParamResult &param_
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool DirectLightIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene)
+bool DirectLightIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, fast_random, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, scene);
 	std::stringstream set;
 
 	render_control.addTimerEvent("prepass");
@@ -74,7 +74,7 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, FastRandom
 
 	if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 	{
-		success = success && createCausticMap(render_control, fast_random);
+		success = success && createCausticMap(render_control);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 	}
 
@@ -93,7 +93,7 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, FastRandom
 	return success;
 }
 
-std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
@@ -124,7 +124,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm *image_film, Ra
 			}
 			if(MonteCarloIntegrator::params_.ao_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera, pixel_sampling_data, MonteCarloIntegrator::params_.transparent_shadows_, false, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 		}
-		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
+		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

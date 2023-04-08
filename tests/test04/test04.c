@@ -165,7 +165,7 @@ int main()
 	yafaray_setParamMapInt(yi, "AA_passes", 1);
 	yafaray_setParamMapInt(yi, "threads", 1);
 	yafaray_setParamMapInt(yi, "threads_photons", 1);
-	yafaray_setupRender(yi);
+	yafaray_preprocessSurfaceIntegrator(yi);
 	yafaray_clearParamMap(param_map);
 
 	/* Creating image output */

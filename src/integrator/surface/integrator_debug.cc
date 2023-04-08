@@ -50,12 +50,12 @@ ParamMap DebugIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> DebugIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> DebugIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<DebugIntegrator>(logger, param_result, name, param_map)};
+	auto integrator {new DebugIntegrator(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_result};
+	return {integrator, param_result};
 }
 
 DebugIntegrator::DebugIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
@@ -64,7 +64,7 @@ DebugIntegrator::DebugIntegrator(Logger &logger, ParamResult &param_result, cons
 	//FIXME render_info_ += getClassName() + ": '" + params_.debug_type_.print() + "' | ";
 }
 
-std::pair<Rgb, float> DebugIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+std::pair<Rgb, float> DebugIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	const auto [sp, tmax] = accelerator_->intersect(ray, image_film->getCamera());
 	if(sp)

@@ -279,11 +279,10 @@ void ImageFilm::init(const SurfaceIntegrator &surface_integrator)
 	}
 }
 
-bool ImageFilm::render(std::unique_ptr<ProgressBar> progress_bar, const SurfaceIntegrator &surface_integrator, const Scene &scene)
+bool ImageFilm::render(std::unique_ptr<ProgressBar> progress_bar, SurfaceIntegrator &surface_integrator, const Scene &scene)
 {
 	render_control_.setProgressBar(std::move(progress_bar));
 
-	FastRandom fast_random;
 	/*FIXME bool success = surface_integrator.preprocess(render_control_, fast_random, scene);
 	if(!success)
 	{
@@ -293,7 +292,7 @@ bool ImageFilm::render(std::unique_ptr<ProgressBar> progress_bar, const SurfaceI
 
 	//logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	render_control_.setStarted();
-	bool success = surface_integrator.render(this, fast_random, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+	bool success = surface_integrator.render(this, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
 	if(!success)
 	{
 		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");

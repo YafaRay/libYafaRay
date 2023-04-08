@@ -470,7 +470,7 @@ int main()
 
 	/* Setting up renderer, which is a prerequisite for rendering */
 	yafaray_clearParamMap(param_map);
-	yafaray_setupRender(scene, surface_integrator, param_map);
+	yafaray_preprocessSurfaceIntegrator(scene, surface_integrator, param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);

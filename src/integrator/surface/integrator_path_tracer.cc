@@ -66,12 +66,12 @@ ParamMap PathIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PathIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> PathIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<PathIntegrator>(logger, param_result, name, param_map)};
+	auto integrator {new PathIntegrator(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_result};
+	return {integrator, param_result};
 }
 
 PathIntegrator::PathIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
@@ -79,9 +79,9 @@ PathIntegrator::PathIntegrator(Logger &logger, ParamResult &param_result, const 
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene)
+bool PathIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, fast_random, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, scene);
 	std::stringstream set;
 
 	render_control.addTimerEvent("prepass");
@@ -98,7 +98,7 @@ bool PathIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_
 
 	if(params_.caustic_type_.has(CausticType::Photon))
 	{
-		success = success && createCausticMap(render_control, fast_random);
+		success = success && createCausticMap(render_control);
 	}
 
 	if(params_.caustic_type_ == CausticType::Path)
@@ -134,7 +134,7 @@ bool PathIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_
 	return success;
 }
 
-std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	static int calls = 0;
 	++calls;
@@ -194,7 +194,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray,
 				const float wavelength_dispersive = chromatic_enabled ? sample::riS(offs) : 0.f;
 				//this mat already is initialized, just sample (diffuse...non-specular?)
 				float s_1 = sample::riVdC(offs);
-				float s_2 = Halton::lowDiscrepancySampling(fast_random, 2, offs);
+				float s_2 = Halton::lowDiscrepancySampling(fast_random_, 2, offs);
 				if(ray_division.division_ > 1)
 				{
 					s_1 = math::addMod1(s_1, ray_division.decorrelation_1_);
@@ -230,8 +230,8 @@ std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray,
 				for(int depth = 1; depth < params_.bounces_; ++depth)
 				{
 					int d_4 = 4 * depth;
-					s.s_1_ = Halton::lowDiscrepancySampling(fast_random, d_4 + 3, offs); //ourRandom();//
-					s.s_2_ = Halton::lowDiscrepancySampling(fast_random, d_4 + 4, offs); //ourRandom();//
+					s.s_1_ = Halton::lowDiscrepancySampling(fast_random_, d_4 + 3, offs); //ourRandom();//
+					s.s_2_ = Halton::lowDiscrepancySampling(fast_random_, d_4 + 4, offs); //ourRandom();//
 
 					if(ray_division.division_ > 1)
 					{
@@ -287,7 +287,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(ImageFilm *image_film, Ray &ray,
 			}
 			col += path_col / n_samples;
 		}
-		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, fast_random, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
+		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)

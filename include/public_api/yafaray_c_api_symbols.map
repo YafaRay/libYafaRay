@@ -63,7 +63,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_setFlushAreaCallback;
         yafaray_setFlushCallback;
         yafaray_setHighlightAreaCallback;
-        yafaray_setupRender;
+        yafaray_preprocessScene;
+        yafaray_preprocessSurfaceIntegrator;
         yafaray_render;
         yafaray_defineLayer;
         yafaray_enablePrintDateTime;

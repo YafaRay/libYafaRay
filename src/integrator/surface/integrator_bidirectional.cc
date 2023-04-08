@@ -89,12 +89,12 @@ ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> BidirectionalIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> BidirectionalIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {std::make_unique<BidirectionalIntegrator>(logger, param_result, name, param_map)};
+	auto integrator {new BidirectionalIntegrator(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {std::move(integrator), param_result};
+	return {integrator, param_result};
 }
 
 /*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)*/
@@ -197,9 +197,9 @@ BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, ParamResult &pa
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool BidirectionalIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene)
+bool BidirectionalIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, fast_random, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, scene);
 	n_paths_ = 0;
 	f_num_lights_ = 1.f / static_cast<float>(numLights());
 	std::vector<float> energies(numLights());
@@ -259,16 +259,16 @@ void BidirectionalIntegrator::cleanup(ImageFilm *image_film) const
 	image_film->setNumDensitySamples(n_paths_); //dirty hack...
 }
 
-bool BidirectionalIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const
+bool BidirectionalIntegrator::render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	image_film->setDensityEstimation(true);
-	return ParentClassType_t::render(image_film, fast_random, object_index_highest, material_index_highest);
+	return ParentClassType_t::render(image_film, object_index_highest, material_index_highest);
 }
 
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;

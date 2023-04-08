@@ -162,7 +162,7 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<SurfaceIntegrator *, ParamResult> SurfaceIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
 	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
@@ -182,14 +182,14 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::fa
 	}
 }
 
-SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}, name_{name}
+SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : logger_{logger}, params_{param_result, param_map}, name_{name}
 {
 	//Empty
 }
 
 SurfaceIntegrator::~SurfaceIntegrator() = default;
 
-bool SurfaceIntegrator::preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene)
+bool SurfaceIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
 {
 	bool result{true};
 	accelerator_ = scene.getAccelerator();

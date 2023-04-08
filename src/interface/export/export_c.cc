@@ -468,7 +468,7 @@ void ExportC::setupRender() noexcept
 {
 	writeParamMap(*params_);
 	params_->clear();
-	file_ << "\t" << "yafaray_setupRender(yi);\n";
+	file_ << "\t" << "yafaray_preprocessSurfaceIntegrator(yi);\n";
 	file_ << "\t" << "yafaray_clearParamMap(param_map);\n\n";
 	section_num_lines_ += 2;
 }

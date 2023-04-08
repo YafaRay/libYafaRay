@@ -40,7 +40,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 
 	public:
 		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
-		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
+		static std::pair<SurfaceIntegrator *, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		BidirectionalIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
@@ -60,16 +60,16 @@ class BidirectionalIntegrator final : public TiledIntegrator
 			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
 			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
 		} params_;
-		bool render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const override;
+		bool render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
-		bool preprocess(RenderControl &render_control, FastRandom &fast_random, const Scene &scene) override;
+		bool preprocess(RenderControl &render_control, const Scene &scene) override;
 		void cleanup(ImageFilm *image_film) const override;
-		std::pair<Rgb, float> integrate(ImageFilm *image_film, Ray &ray, FastRandom &fast_random, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) const override;
+		std::pair<Rgb, float> integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) override;
 		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
 		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const;
 		Rgb evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;

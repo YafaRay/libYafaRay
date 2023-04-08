@@ -28,6 +28,7 @@
 #include "param/param.h"
 #include "integrator/surface/integrator_surface.h"
 #include "render/imagefilm.h"
+#include "math/random.h"
 #include <cstring>
 
 /*yafaray_Scene *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, const yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
@@ -118,7 +119,7 @@ void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list)
 
 yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map)
 {
-	auto surface_integrator{new yafaray::SurfaceIntegrator(name, *reinterpret_cast<const yafaray::Scene *>(scene), *reinterpret_cast<const yafaray::ParamMap *>(param_map), <#initializer#>)};
+	auto [surface_integrator, result]{yafaray::SurfaceIntegrator::factory(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return reinterpret_cast<yafaray_SurfaceIntegrator *>(surface_integrator);
 }
 
@@ -409,12 +410,22 @@ int yafaray_getFilmHeight(const yafaray_Film *film)
 	else return 0;
 }
 
-void yafaray_setupRender(yafaray_Scene *scene, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_ParamMap *param_map)
+void yafaray_preprocessScene(yafaray_Scene *scene)
 {
 	auto yaf_scene{reinterpret_cast<yafaray::Scene *>(scene)};
-	auto yaf_surface_integrator{reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)};
-	yaf_surface_integrator->setupSceneRenderParams(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
 	yaf_scene->init();
+}
+
+void yafaray_preprocessSurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+{
+	auto yaf_scene{reinterpret_cast<const yafaray::Scene *>(scene)};
+	auto yaf_surface_integrator{reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)};
+	std::unique_ptr<yafaray::ProgressBar> progress_bar;
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
+	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
+	yafaray::RenderControl render_control; //FIXME!
+	render_control.setProgressBar(std::move(progress_bar)); //FIXME!
+	yaf_surface_integrator->preprocess(render_control, *yaf_scene);
 }
 
 void yafaray_render(yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
@@ -422,7 +433,7 @@ void yafaray_render(yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film 
 	std::unique_ptr<yafaray::ProgressBar> progress_bar;
 	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
 	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->render(image_film, *reinterpret_cast<yafaray::ImageFilm *>(film), std::move(progress_bar), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::ImageFilm *>(film)->render(std::move(progress_bar), *reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
 void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map)
