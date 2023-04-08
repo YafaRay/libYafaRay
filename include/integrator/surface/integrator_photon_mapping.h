@@ -26,14 +26,22 @@
 
 namespace yafaray {
 
-struct PreGatherData final
+class PreGatherData final
 {
-	explicit PreGatherData(PhotonMap *dm) : diffuse_map_(dm), fetched_(0) {}
-	PhotonMap *diffuse_map_;
-	std::vector<RadData> rad_points_;
-	std::vector<Photon> radiance_vec_;
-	int fetched_;
-	std::mutex mutx_;
+	public:
+		explicit PreGatherData(PhotonMap *dm) : diffuse_map_{dm} { }
+		PhotonMap *getDiffuseMap() { return diffuse_map_; }
+		const PhotonMap *getDiffuseMap() const { return diffuse_map_; }
+		void lock() { mutx_.lock(); }
+		void unlock() { mutx_.unlock(); }
+
+		std::vector<RadData> rad_points_;
+		std::vector<Photon> radiance_vec_;
+		int fetched_{0};
+
+	private:
+		PhotonMap *diffuse_map_;
+		std::mutex mutx_;
 };
 
 class PhotonIntegrator final : public CausticPhotonIntegrator
@@ -71,6 +79,10 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 		static void preGatherWorker(RenderControl &render_control, PreGatherData *gdata, float ds_rad, int n_search);
 		static void photonMapKdTreeWorker(PhotonMap *photon_map);
+		PhotonMap *getDiffuseMap() { return diffuse_map_.get(); }
+		const PhotonMap *getDiffuseMap() const { return diffuse_map_.get(); }
+		std::unique_ptr<PhotonMap> &getRadianceMap() { return radiance_map_; }
+		const std::unique_ptr<PhotonMap> &getRadianceMap() const { return radiance_map_; }
 
 		bool use_photon_diffuse_{params_.diffuse_}; //!< enable/disable diffuse photon processing
 		int photons_diffuse_{params_.photons_diffuse_}; //!< Number of diffuse photons

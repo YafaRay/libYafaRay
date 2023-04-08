@@ -90,9 +90,9 @@ SppmIntegrator::SppmIntegrator(Logger &logger, ParamResult &param_result, const 
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
-	caustic_map_->setName("Caustic Photon Map");
+	getCausticMap()->setName("Caustic Photon Map");
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);
-	diffuse_map_->setName("Diffuse Photon Map");
+	getDiffuseMap()->setName("Diffuse Photon Map");
 }
 
 bool SppmIntegrator::render(ImageFilm *image_film, FastRandom &fast_random, unsigned int object_index_highest, unsigned int material_index_highest) const
@@ -492,13 +492,13 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, FastRandom &fas
 		}
 		done = (curr >= n_photons_thread);
 	}
-	diffuse_map_->mutx_.lock();
-	caustic_map_->mutx_.lock();
-	diffuse_map_->appendVector(local_diffuse_photons, curr);
-	caustic_map_->appendVector(local_caustic_photons, curr);
+	getDiffuseMap()->lock();
+	getCausticMap()->lock();
+	getDiffuseMap()->appendVector(local_diffuse_photons, curr);
+	getCausticMap()->appendVector(local_caustic_photons, curr);
 	total_photons_shot += curr;
-	caustic_map_->mutx_.unlock();
-	diffuse_map_->mutx_.unlock();
+	getCausticMap()->unlock();
+	getDiffuseMap()->unlock();
 }
 
 
@@ -516,15 +516,15 @@ void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int
 	if(b_hashgrid_) photon_grid_.clear();
 	else
 	{
-		diffuse_map_->clear();
-		diffuse_map_->setNumPaths(0);
-		diffuse_map_->reserveMemory(n_photons_);
-		diffuse_map_->setNumThreadsPkDtree(num_threads_photons_);
+		getDiffuseMap()->clear();
+		getDiffuseMap()->setNumPaths(0);
+		getDiffuseMap()->reserveMemory(n_photons_);
+		getDiffuseMap()->setNumThreadsPkDtree(num_threads_photons_);
 
-		caustic_map_->clear();
-		caustic_map_->setNumPaths(0);
-		caustic_map_->reserveMemory(n_photons_);
-		caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
+		getCausticMap()->clear();
+		getCausticMap()->setNumPaths(0);
+		getCausticMap()->reserveMemory(n_photons_);
+		getCausticMap()->setNumThreadsPkDtree(num_threads_photons_);
 	}
 
 	//background do not emit photons, or it is merged into normal light?
@@ -572,7 +572,7 @@ void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int
 
 	totaln_photons_ +=  n_photons_;	// accumulate the total photon number, not using nPath for the case of hashgrid.
 
-	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored photons: ", diffuse_map_->nPhotons() + caustic_map_->nPhotons());
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored photons: ", getDiffuseMap()->nPhotons() + getCausticMap()->nPhotons());
 
 	if(b_hashgrid_)
 	{
@@ -582,19 +582,19 @@ void SppmIntegrator::prePass(ImageFilm *image_film, FastRandom &fast_random, int
 	}
 	else
 	{
-		if(diffuse_map_->nPhotons() > 0)
+		if(getDiffuseMap()->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			diffuse_map_->updateTree();
+			getDiffuseMap()->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
-		if(caustic_map_->nPhotons() > 0)
+		if(getCausticMap()->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			caustic_map_->updateTree();
+			getCausticMap()->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
-		if(diffuse_map_->nPhotons() < 50)
+		if(getDiffuseMap()->nPhotons() < 50)
 		{
 			logger_.logError(getName(), ": Too few photons, stopping now.");
 			return;
@@ -653,10 +653,10 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 			float radius_2 = radius_1;
 			int n_gathered_1 = 0, n_gathered_2 = 0;
 
-			if(diffuse_map_->nPhotons() > 0)
-				n_gathered_1 = diffuse_map_->gather(sp->p_, gathered.get(), params_.search_num_, radius_1);
-			if(caustic_map_->nPhotons() > 0)
-				n_gathered_2 = caustic_map_->gather(sp->p_, gathered.get(), params_.search_num_, radius_2);
+			if(getDiffuseMap()->nPhotons() > 0)
+				n_gathered_1 = getDiffuseMap()->gather(sp->p_, gathered.get(), params_.search_num_, radius_1);
+			if(getCausticMap()->nPhotons() > 0)
+				n_gathered_2 = getCausticMap()->gather(sp->p_, gathered.get(), params_.search_num_, radius_2);
 			if(n_gathered_1 > 0 || n_gathered_2 > 0) // it none photon gathered, we just skip.
 			{
 				if(radius_1 < radius_2) // we choose the smaller one to be the initial radius.
@@ -675,9 +675,9 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 			n_gathered = photon_grid_.gather(sp->p_, gathered.get(), n_max_gather_, radius_2); // disable now
 		else
 		{
-			if(diffuse_map_->nPhotons() > 0) // this is needed to avoid a runtime error.
+			if(getDiffuseMap()->nPhotons() > 0) // this is needed to avoid a runtime error.
 			{
-				n_gathered = diffuse_map_->gather(sp->p_, gathered.get(), n_max_gather_, radius_2); //we always collected all the photon inside the radius
+				n_gathered = getDiffuseMap()->gather(sp->p_, gathered.get(), n_max_gather_, radius_2); //we always collected all the photon inside the radius
 			}
 
 			if(n_gathered > 0 && logger_.isDebug())
@@ -726,11 +726,11 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fa
 			}
 
 			// gather caustics photons
-			if(mat_bsdfs.has(BsdfFlags::Diffuse) && caustic_map_->ready())
+			if(mat_bsdfs.has(BsdfFlags::Diffuse) && getCausticMap()->ready())
 			{
 
 				radius_2 = hp.radius_2_; //reset radius2 & nGathered
-				n_gathered = caustic_map_->gather(sp->p_, gathered.get(), n_max_gather_, radius_2);
+				n_gathered = getCausticMap()->gather(sp->p_, gathered.get(), n_max_gather_, radius_2);
 				if(n_gathered > 0)
 				{
 					Rgb surf_col(0.f);

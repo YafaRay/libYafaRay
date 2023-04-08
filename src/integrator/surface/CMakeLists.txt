@@ -26,6 +26,6 @@ target_sources(libyafaray4
 		integrator_photon_caustic.cc
 		integrator_path_tracer.cc
 		integrator_photon_mapping.cc
-		#integrator_sppm.cc
+		integrator_sppm.cc
 		integrator_tiled.cc
 )

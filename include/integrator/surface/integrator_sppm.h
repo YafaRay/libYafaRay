@@ -97,6 +97,10 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, FastRandom &fast_random, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, const Camera *camera, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest) const;
 		void photonWorker(RenderControl &render_control, FastRandom &fast_random, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step) const;
 		[[nodiscard]] int setNumThreadsPhotons(int threads_photons);
+		PhotonMap *getCausticMap() { return caustic_map_.get(); }
+		const PhotonMap *getCausticMap() const { return caustic_map_.get(); }
+		PhotonMap *getDiffuseMap() { return diffuse_map_.get(); }
+		const PhotonMap *getDiffuseMap() const { return diffuse_map_.get(); }
 
 		const int num_threads_photons_{setNumThreadsPhotons(params_.threads_photons_)};
 		HashGrid photon_grid_; //!< the hashgrid for holding photons
@@ -106,7 +110,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 		uint64_t totaln_photons_{0}; //!< amount of total photons that have been emited, used to normalize photon energy
 		bool b_hashgrid_{false}; //!< flag to choose using hashgrid or not.
 		Halton hal_1_{2, 0}, hal_2_{3, 0}, hal_3_{5, 0}, hal_4_{7, 0}; //!< halton sequence to do
-		std::vector<HitPoint>hit_points_; //!< per-pixel refine data
+		std::vector<HitPoint> hit_points_; //!< per-pixel refine data
 		unsigned int n_refined_; //!< Debug info: Refined pixel per pass
 		int n_max_gathered_ = 0; //!< Just for statistical information about max number of gathered photons
 		std::unique_ptr<PhotonMap> caustic_map_;

@@ -82,7 +82,7 @@ ParamMap CausticPhotonIntegrator::getAsParamMap(bool only_non_default) const
 CausticPhotonIntegrator::CausticPhotonIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map), params_{param_result, param_map}
 {
 	caustic_map_ = std::make_unique<PhotonMap>(logger);
-	caustic_map_->setName("Caustic Photon Map");
+	getCausticMap()->setName("Caustic Photon Map");
 }
 
 CausticPhotonIntegrator::~CausticPhotonIntegrator() = default;
@@ -214,18 +214,18 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, FastR
 		}
 		done = (curr >= n_caus_photons_thread);
 	}
-	caustic_map_->mutx_.lock();
-	caustic_map_->appendVector(local_caustic_photons, curr);
+	getCausticMap()->lock();
+	getCausticMap()->appendVector(local_caustic_photons, curr);
 	total_photons_shot += curr;
-	caustic_map_->mutx_.unlock();
+	getCausticMap()->unlock();
 }
 
 bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, FastRandom &fast_random)
 {
-	caustic_map_->clear();
-	caustic_map_->setNumPaths(0);
-	caustic_map_->reserveMemory(n_caus_photons_);
-	caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
+	getCausticMap()->clear();
+	getCausticMap()->setNumPaths(0);
+	getCausticMap()->reserveMemory(n_caus_photons_);
+	getCausticMap()->setNumThreadsPkDtree(num_threads_photons_);
 
 	const auto lights_caustic{getLightsEmittingCausticPhotons()};
 	if(!lights_caustic.empty())
@@ -266,12 +266,12 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, Fa
 		render_control.setProgressBarTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", getCausticMap()->nPhotons());
 
-		if(caustic_map_->nPhotons() > 0)
+		if(getCausticMap()->nPhotons() > 0)
 		{
 			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			caustic_map_->updateTree();
+			getCausticMap()->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}

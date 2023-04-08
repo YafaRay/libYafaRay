@@ -97,16 +97,16 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::fac
 void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherData *gdata, float ds_rad, int n_search)
 {
 	const float ds_radius_2 = ds_rad * ds_rad;
-	gdata->mutx_.lock();
+	gdata->lock();
 	unsigned int start = gdata->fetched_;
 	const unsigned int total = gdata->rad_points_.size();
 	unsigned int end = gdata->fetched_ = std::min(total, start + 32);
-	gdata->mutx_.unlock();
+	gdata->unlock();
 
 	auto gathered = std::unique_ptr<FoundPhoton[]>(new FoundPhoton[n_search]);
 
 	float radius = 0.f;
-	const float i_scale = 1.f / (static_cast<float>(gdata->diffuse_map_->nPaths()) * math::num_pi<>);
+	const float i_scale = 1.f / (static_cast<float>(gdata->getDiffuseMap()->nPaths()) * math::num_pi<>);
 	float scale = 0.f;
 
 	while(start < total)
@@ -114,7 +114,7 @@ void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherD
 		for(unsigned int n = start; n < end; ++n)
 		{
 			radius = ds_radius_2;//actually the square radius...
-			const int n_gathered = gdata->diffuse_map_->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
+			const int n_gathered = gdata->getDiffuseMap()->gather(gdata->rad_points_[n].pos_, gathered.get(), n_search, radius);
 
 			Vec3f rnorm{gdata->rad_points_[n].normal_};
 
@@ -135,11 +135,11 @@ void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherD
 
 			gdata->radiance_vec_[n] = Photon{rnorm, gdata->rad_points_[n].pos_, sum, gdata->rad_points_[n].time_};
 		}
-		gdata->mutx_.lock();
+		gdata->lock();
 		start = gdata->fetched_;
 		end = gdata->fetched_ = std::min(total, start + 32);
 		render_control.updateProgressBar(32);
-		gdata->mutx_.unlock();
+		gdata->unlock();
 	}
 }
 
@@ -147,9 +147,9 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, ParamResult &param_result, co
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	diffuse_map_ = std::make_unique<PhotonMap>(logger);
-	diffuse_map_->setName("Diffuse Photon Map");
+	getDiffuseMap()->setName("Diffuse Photon Map");
 	radiance_map_ = std::make_unique<PhotonMap>(logger);
-	radiance_map_->setName("FG Radiance Photon Map");
+	getRadianceMap()->setName("FG Radiance Photon Map");
 }
 
 void PhotonIntegrator::diffuseWorker(RenderControl &render_control, FastRandom &fast_random, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
@@ -267,13 +267,13 @@ void PhotonIntegrator::diffuseWorker(RenderControl &render_control, FastRandom &
 		}
 		done = (curr >= n_diffuse_photons_thread);
 	}
-	diffuse_map_->mutx_.lock();
-	diffuse_map_->appendVector(local_diffuse_photons, curr);
+	getDiffuseMap()->lock();
+	getDiffuseMap()->appendVector(local_diffuse_photons, curr);
 	total_photons_shot += curr;
-	diffuse_map_->mutx_.unlock();
-	pgdat.mutx_.lock();
+	getDiffuseMap()->unlock();
+	pgdat.lock();
 	pgdat.rad_points_.insert(std::end(pgdat.rad_points_), std::begin(local_rad_points), std::end(local_rad_points));
-	pgdat.mutx_.unlock();
+	pgdat.unlock();
 }
 
 void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
@@ -315,19 +315,19 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		set << " FG paths=" << params_.fg_samples_ << " bounces=" << params_.fg_bounces_ << "  ";
 	}
 
-	diffuse_map_->clear();
-	diffuse_map_->setNumPaths(0);
-	diffuse_map_->reserveMemory(photons_diffuse_);
-	diffuse_map_->setNumThreadsPkDtree(num_threads_photons_);
+	getDiffuseMap()->clear();
+	getDiffuseMap()->setNumPaths(0);
+	getDiffuseMap()->reserveMemory(photons_diffuse_);
+	getDiffuseMap()->setNumThreadsPkDtree(num_threads_photons_);
 
-	caustic_map_->clear();
-	caustic_map_->setNumPaths(0);
-	caustic_map_->reserveMemory(n_caus_photons_);
-	caustic_map_->setNumThreadsPkDtree(num_threads_photons_);
+	getCausticMap()->clear();
+	getCausticMap()->setNumPaths(0);
+	getCausticMap()->reserveMemory(n_caus_photons_);
+	getCausticMap()->setNumThreadsPkDtree(num_threads_photons_);
 
-	radiance_map_->clear();
-	radiance_map_->setNumPaths(0);
-	radiance_map_->setNumThreadsPkDtree(num_threads_photons_);
+	getRadianceMap()->clear();
+	getRadianceMap()->setNumPaths(0);
+	getRadianceMap()->setNumThreadsPkDtree(num_threads_photons_);
 
 	//shoot photons
 	unsigned int curr = 0;
@@ -375,13 +375,13 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights_diffuse, " light(s)");
 
-		if(diffuse_map_->nPhotons() < 50)
+		if(getDiffuseMap()->nPhotons() < 50)
 		{
 			logger_.logError(getName(), ": Too few diffuse photons, stopping now.");
 			return false;
 		}
 
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored diffuse photons: ", diffuse_map_->nPhotons());
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored diffuse photons: ", getDiffuseMap()->nPhotons());
 	}
 	else
 	{
@@ -390,7 +390,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 
 	std::thread diffuse_map_build_kd_tree_thread;
 
-	if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0)
+	if(use_photon_diffuse_ && getDiffuseMap()->nPhotons() > 0)
 	{
 		if(num_threads_photons_ >= 2)
 		{
@@ -402,7 +402,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			render_control.setProgressBarTag("Building diffuse photons kd-tree...");
-			diffuse_map_->updateTree();
+			getDiffuseMap()->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
@@ -452,7 +452,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		render_control.setProgressBarAsDone();
 		render_control.setProgressBarTag("Caustics photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
-		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", caustic_map_->nPhotons());
+		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", getCausticMap()->nPhotons());
 	}
 	else
 	{
@@ -460,7 +460,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 	}
 
 	std::thread caustic_map_build_kd_tree_thread;
-	if(CausticPhotonIntegrator::params_.use_photon_caustics_ && caustic_map_->nPhotons() > 0)
+	if(CausticPhotonIntegrator::params_.use_photon_caustics_ && getCausticMap()->nPhotons() > 0)
 	{
 		if(num_threads_photons_ >= 2)
 		{
@@ -472,12 +472,12 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			caustic_map_->updateTree();
+			getCausticMap()->updateTree();
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
 
-	if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0 && num_threads_photons_ >= 2)
+	if(use_photon_diffuse_ && getDiffuseMap()->nPhotons() > 0 && num_threads_photons_ >= 2)
 	{
 		diffuse_map_build_kd_tree_thread.join();
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse photon map: done.");
@@ -510,15 +510,15 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, FastRandom &fas
 		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, std::ref(render_control), &pgdat, params_.diffuse_radius_, params_.num_photons_diffuse_search_);
 		for(auto &t : threads) t.join();
 
-		radiance_map_->swapVector(pgdat.radiance_vec_);
+		getRadianceMap()->swapVector(pgdat.radiance_vec_);
 		render_control.setProgressBarAsDone();
 		render_control.setProgressBarTag("Pregathering radiance data done...");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Radiance tree built... Updating the tree...");
-		radiance_map_->updateTree();
+		getRadianceMap()->updateTree();
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 	}
 
-	if(CausticPhotonIntegrator::params_.use_photon_caustics_ && caustic_map_->nPhotons() > 0 && num_threads_photons_ >= 2)
+	if(CausticPhotonIntegrator::params_.use_photon_caustics_ && getCausticMap()->nPhotons() > 0 && num_threads_photons_ >= 2)
 	{
 		caustic_map_build_kd_tree_thread.join();
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic photon map: done.");
@@ -607,7 +607,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 				else if(caustic)
 				{
 					Vec3f sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, pwo)};
-					const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
+					const Photon *nearest = getRadianceMap()->findNearest(hit->p_, sf, lookup_rad_);
 					if(nearest) lcol = nearest->col_;
 				}
 
@@ -654,7 +654,7 @@ Rgb PhotonIntegrator::finalGathering(FastRandom &fast_random, RandomGenerator &r
 			if(mat_bsd_fs.has(BsdfFlags::Diffuse | BsdfFlags::Glossy))
 			{
 				Vec3f sf{SurfacePoint::normalFaceForward(hit->ng_, hit->n_, -p_ray.dir_)};
-				const Photon *nearest = radiance_map_->findNearest(hit->p_, sf, lookup_rad_);
+				const Photon *nearest = getRadianceMap()->findNearest(hit->p_, sf, lookup_rad_);
 				if(nearest) lcol = nearest->col_; //FIXME should lcol be a local variable? Is it getting its value from previous functions or not??
 				if(mat_bsd_fs.has(BsdfFlags::Emit)) lcol += hit->emit(-p_ray.dir_);
 				path_col += lcol * throughput;
@@ -693,7 +693,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 			if(params_.show_map_)
 			{
 				const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
-				const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
+				const Photon *nearest = getRadianceMap()->findNearest(sp->p_, n, lookup_rad_);
 				if(nearest) col += nearest->col_;
 			}
 			else
@@ -703,7 +703,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
 						const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
-						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
+						const Photon *nearest = getRadianceMap()->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = Rgba{nearest->col_};
 					}
 				}
@@ -737,7 +737,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 			if(use_photon_diffuse_ && params_.show_map_)
 			{
 				const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
-				const Photon *nearest = diffuse_map_->findNearest(sp->p_, n, params_.diffuse_radius_);
+				const Photon *nearest = getDiffuseMap()->findNearest(sp->p_, n, params_.diffuse_radius_);
 				if(nearest) col += nearest->col_;
 			}
 			else
@@ -747,7 +747,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 					if(Rgba *color_layer = color_layers->find(LayerDef::Radiance))
 					{
 						const Vec3f n{SurfacePoint::normalFaceForward(sp->ng_, sp->n_, wo)};
-						const Photon *nearest = radiance_map_->findNearest(sp->p_, n, lookup_rad_);
+						const Photon *nearest = getRadianceMap()->findNearest(sp->p_, n, lookup_rad_);
 						if(nearest) *color_layer = Rgba{nearest->col_};
 					}
 				}
@@ -772,12 +772,12 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 
 				int n_gathered = 0;
 
-				if(use_photon_diffuse_ && diffuse_map_->nPhotons() > 0) n_gathered = diffuse_map_->gather(sp->p_, gathered, params_.num_photons_diffuse_search_, radius);
+				if(use_photon_diffuse_ && getDiffuseMap()->nPhotons() > 0) n_gathered = getDiffuseMap()->gather(sp->p_, gathered, params_.num_photons_diffuse_search_, radius);
 				if(use_photon_diffuse_ && n_gathered > 0)
 				{
 					if(n_gathered > n_max) n_max = n_gathered;
 
-					const float scale = 1.f / (static_cast<float>(diffuse_map_->nPaths()) * radius * math::num_pi<>);
+					const float scale = 1.f / (static_cast<float>(getDiffuseMap()->nPaths()) * radius * math::num_pi<>);
 					for(int i = 0; i < n_gathered; ++i)
 					{
 						const Vec3f pdir{gathered[i].photon_->dir_};

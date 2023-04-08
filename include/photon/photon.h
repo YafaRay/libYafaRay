@@ -73,7 +73,8 @@ class PhotonMap final
 		//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;
 		int gather(const Point3f &p, FoundPhoton *found, unsigned int k, float &sq_radius) const;
 		const Photon *findNearest(const Point3f &p, const Vec3f &n, float dist) const;
-		std::mutex mutx_;
+		void lock() { mutx_.lock(); }
+		void unlock() { mutx_.unlock(); }
 
 	protected:
 		std::vector<Photon> photons_;
@@ -83,6 +84,7 @@ class PhotonMap final
 		std::unique_ptr<kdtree::PointKdTree<Photon>> tree_;
 		std::string name_;
 		int threads_pkd_tree_ = 1;
+		std::mutex mutx_;
 		Logger &logger_;
 };
 

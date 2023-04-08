@@ -60,6 +60,8 @@ class CausticPhotonIntegrator: public MonteCarloIntegrator
 		/*! Estimates caustic photons for a given surface point */
 		static Rgb estimateCausticPhotons(const SurfacePoint &sp, const Vec3f &wo, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
 		static Rgb causticPhotons(ColorLayers *color_layers, const Ray &ray, const SurfacePoint &sp, const Vec3f &wo, float clamp_indirect, const PhotonMap *caustic_map, float caustic_radius, int n_caus_search);
+		PhotonMap *getCausticMap() { return caustic_map_.get(); }
+		const std::unique_ptr<PhotonMap> &getCausticMap() const { return caustic_map_; }
 
 		const int num_threads_photons_{setNumThreadsPhotons(params_.threads_photons_)};
 		bool use_photon_caustics_{params_.use_photon_caustics_};
