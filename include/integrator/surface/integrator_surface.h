@@ -84,8 +84,11 @@ class SurfaceIntegrator
 		const EdgeToonParams *getEdgeToonParams() const { return &edge_toon_params_; }
 		const AaNoiseParams *getAaParameters() const { return &aa_noise_params_; }
 
+	private:
+		std::string name_{getClassName()}; //Keep at the beginning of the list of members to ensure it is constructed before other methods called at construction
+
 	protected:
-		Logger &logger_;
+		Logger &logger_; //Keep at the beginning of the list of members to ensure it is constructed before other methods called at construction
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
@@ -194,7 +197,6 @@ class SurfaceIntegrator
 		std::vector<const Light *> getLightsVisible() const;
 		[[nodiscard]] int setNumThreads(int threads_photons);
 
-		std::string name_{getClassName()};
 		std::map<std::string, const Light *> lights_map_filtered_;
 		std::vector<const Light *> lights_visible_;
 };

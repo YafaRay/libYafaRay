@@ -459,18 +459,10 @@ int main()
 
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
-	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", YAFARAY_DISPLAY_CONSOLE_NORMAL, param_map);
-
-	/* Creating surface integrator */
-	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "raydepth", 2);
 	yafaray_setParamMapInt(param_map, "shadowDepth", 2);
 	yafaray_setParamMapString(param_map, "type", "directlighting");
-	yafaray_defineSurfaceIntegrator(surface_integrator, param_map);
-
-	/* Setting up renderer, which is a prerequisite for rendering */
-	yafaray_clearParamMap(param_map);
-	yafaray_preprocessSurfaceIntegrator(scene, surface_integrator, param_map);
+	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
@@ -505,6 +497,8 @@ int main()
 	yafaray_createOutput(film, "output1_tga", param_map);
 
 	/* Rendering */
+	yafaray_preprocessScene(scene);
+	yafaray_preprocessSurfaceIntegrator(surface_integrator, scene, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_render(surface_integrator, film, scene, NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 
 	/* Destruction/deallocation */

@@ -182,7 +182,7 @@ std::pair<SurfaceIntegrator *, ParamResult> SurfaceIntegrator::factory(Logger &l
 	}
 }
 
-SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : logger_{logger}, params_{param_result, param_map}, name_{name}
+SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : name_{name}, logger_{logger}, params_{param_result, param_map}
 {
 	//Empty
 }

@@ -124,6 +124,14 @@ int main()
 	yafaray_setParamMapString(param_map, "scene_accelerator", "yafaray-kdtree-original");
 	scene = yafaray_createScene(logger, "scene", param_map);
 
+	/* Creating surface integrator */
+	yafaray_clearParamMap(param_map);
+	/*yafaray_setParamMapString(yi, "type", "directlighting");*/
+	yafaray_setParamMapString(param_map, "type", "photonmapping");
+	yafaray_setParamMapInt(param_map, "threads", -1);
+	yafaray_setParamMapInt(param_map, "threads_photons", -1);
+	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", param_map);
+
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "width", result_image.width_);
@@ -255,14 +263,6 @@ int main()
 	layers_string = yafaray_getLayersTable(film);
 	printf("** Layers defined:\n%s\n", layers_string);
 	yafaray_destroyCharString(layers_string);
-
-	/* Creating surface integrator */
-	yafaray_clearParamMap(param_map);
-	/*yafaray_setParamMapString(yi, "type", "directlighting");*/
-	yafaray_setParamMapString(param_map, "type", "photonmapping");
-	yafaray_setParamMapInt(param_map, "threads", -1);
-	yafaray_setParamMapInt(param_map, "threads_photons", -1);
-	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", param_map);
 
 	/* Rendering */
 	yafaray_preprocessScene(scene);
