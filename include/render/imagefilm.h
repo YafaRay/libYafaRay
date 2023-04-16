@@ -34,7 +34,6 @@
 #include "image/image_pixel_types.h"
 #include "math/buffer_2d.h"
 #include "image/image_layers.h"
-#include "render/render_callbacks.h"
 #include "common/timer.h"
 #include "geometry/rect.h"
 #include "renderer.h"
@@ -121,12 +120,12 @@ class ImageFilm final
 		std::pair<size_t, ParamResult> createOutput(const std::string &name, const ParamMap &param_map);
 		bool disableOutput(const std::string &name);
 		void clearOutputs();
-		void setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data);
-		void setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data);
-		void setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data);
-		void setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data);
-		void setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data);
-		void setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data);
+		void setRenderNotifyLayerCallback(yafaray_FilmNotifyLayerCallback callback, void *callback_data);
+		void setRenderPutPixelCallback(yafaray_FilmPutPixelCallback callback, void *callback_data);
+		void setRenderHighlightPixelCallback(yafaray_FilmHighlightPixelCallback callback, void *callback_data);
+		void setRenderFlushAreaCallback(yafaray_FilmFlushAreaCallback callback, void *callback_data);
+		void setRenderFlushCallback(yafaray_FilmFlushCallback callback, void *callback_data);
+		void setRenderHighlightAreaCallback(yafaray_FilmHighlightAreaCallback callback, void *callback_data);
 		RenderControl &getRenderControl() { return render_control_; }
 		float getMaxDepthInverse() const { return max_depth_inverse_; }
 		void setMaxDepthInverse(float max_depth_inverse) { max_depth_inverse_ = max_depth_inverse; }
@@ -259,7 +258,18 @@ class ImageFilm final
 		std::unique_ptr<Camera> camera_;
 		Items<ImageOutput> outputs_;
 		RenderControl render_control_;
-		RenderCallbacks render_callbacks_;
+		yafaray_FilmNotifyLayerCallback notify_layer_callback_ = nullptr;
+		void *notify_layer_callback_data_ = nullptr;
+		yafaray_FilmPutPixelCallback put_pixel_callback_ = nullptr;
+		void *put_pixel_callback_data_ = nullptr;
+		yafaray_FilmHighlightPixelCallback highlight_pixel_callback_ = nullptr;
+		void *highlight_pixel_callback_data_ = nullptr;
+		yafaray_FilmFlushAreaCallback flush_area_callback_ = nullptr;
+		void *flush_area_callback_data_ = nullptr;
+		yafaray_FilmFlushCallback flush_callback_ = nullptr;
+		void *flush_callback_data_ = nullptr;
+		yafaray_FilmHighlightAreaCallback highlight_area_callback_ = nullptr;
+		void *highlight_area_callback_data_ = nullptr;
 		const AaNoiseParams *aa_noise_params_{nullptr};
 		const EdgeToonParams *edge_toon_params_{nullptr};
 		Logger &logger_;

@@ -366,32 +366,32 @@ yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, c
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data)
+void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_FilmNotifyLayerCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderNotifyLayerCallback(callback, callback_data);
 }
 
-void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_RenderPutPixelCallback callback, void *callback_data)
+void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_FilmPutPixelCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderPutPixelCallback(callback, callback_data);
 }
 
-void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_RenderHighlightPixelCallback callback, void *callback_data)
+void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_FilmHighlightPixelCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderHighlightPixelCallback(callback, callback_data);
 }
 
-void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_RenderFlushAreaCallback callback, void *callback_data)
+void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_FilmFlushAreaCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderFlushAreaCallback(callback, callback_data);
 }
 
-void yafaray_setFlushCallback(yafaray_Film *film, yafaray_RenderFlushCallback callback, void *callback_data)
+void yafaray_setFlushCallback(yafaray_Film *film, yafaray_FilmFlushCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderFlushCallback(callback, callback_data);
 }
 
-void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_RenderHighlightAreaCallback callback, void *callback_data)
+void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_FilmHighlightAreaCallback callback, void *callback_data)
 {
 	reinterpret_cast<yafaray::ImageFilm *>(film)->setRenderHighlightAreaCallback(callback, callback_data);
 }

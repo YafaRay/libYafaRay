@@ -57,12 +57,12 @@ extern "C" {
 	} yafaray_ResultFlags;
 
 	/* Callback definitions for the C API - FIXME: Should we care about the function call convention being the same for libYafaRay and its client(s)? */
-	typedef void (*yafaray_RenderNotifyLayerCallback)(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int exported_channels, void *callback_data);
-	typedef void (*yafaray_RenderPutPixelCallback)(const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
-	typedef void (*yafaray_RenderFlushAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderFlushCallback)(void *callback_data);
-	typedef void (*yafaray_RenderHighlightAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
-	typedef void (*yafaray_RenderHighlightPixelCallback)(int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_FilmNotifyLayerCallback)(const char *internal_layer_name, const char *exported_layer_name, int width, int height, int exported_channels, void *callback_data);
+	typedef void (*yafaray_FilmPutPixelCallback)(const char *layer_name, int x, int y, float r, float g, float b, float a, void *callback_data);
+	typedef void (*yafaray_FilmFlushAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_FilmFlushCallback)(void *callback_data);
+	typedef void (*yafaray_FilmHighlightAreaCallback)(int area_id, int x_0, int y_0, int x_1, int y_1, void *callback_data);
+	typedef void (*yafaray_FilmHighlightPixelCallback)(int x, int y, float r, float g, float b, float a, void *callback_data);
 	typedef void (*yafaray_ProgressBarCallback)(int steps_total, int steps_done, const char *tag, void *callback_data);
 	typedef void (*yafaray_LoggerCallback)(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
@@ -125,12 +125,12 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
-	YAFARAY_C_API_EXPORT void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_RenderNotifyLayerCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_RenderPutPixelCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_RenderHighlightPixelCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_RenderFlushAreaCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setFlushCallback(yafaray_Film *film, yafaray_RenderFlushCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_RenderHighlightAreaCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setNotifyLayerCallback(yafaray_Film *film, yafaray_FilmNotifyLayerCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setPutPixelCallback(yafaray_Film *film, yafaray_FilmPutPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setHighlightPixelCallback(yafaray_Film *film, yafaray_FilmHighlightPixelCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_FilmFlushAreaCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setFlushCallback(yafaray_Film *film, yafaray_FilmFlushCallback callback, void *callback_data);
+	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_FilmHighlightAreaCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_preprocessScene(yafaray_Scene *scene);
 	YAFARAY_C_API_EXPORT void yafaray_preprocessSurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
 	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);

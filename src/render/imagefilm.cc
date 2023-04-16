@@ -269,12 +269,12 @@ void ImageFilm::init(const SurfaceIntegrator &surface_integrator)
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder();	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
-	if(render_callbacks_.notify_layer_)
+	if(notify_layer_callback_)
 	{
 		const Layers &layers = layers_.getLayersWithExportedImages();
 		for(const auto &[layer_type, layer] : layers)
 		{
-			render_callbacks_.notify_layer_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), params_.width_, params_.height_, layer.getNumExportedChannels(), render_callbacks_.notify_layer_data_);
+			notify_layer_callback_(LayerDef::getName(layer_type).c_str(), layer.getExportedImageName().c_str(), params_.width_, params_.height_, layer.getNumExportedChannels(), notify_layer_callback_data_);
 		}
 	}
 }
@@ -458,11 +458,11 @@ int ImageFilm::nextPass(bool adaptive_aa, const std::string &integrator_name, co
 				if(flags_.get({{x, y}}))
 				{
 					++n_resample;
-					if(render_callbacks_.highlight_pixel_)
+					if(highlight_pixel_callback_)
 					{
 						const float weight = weights_({{x, y}}).getFloat();
 						const Rgba col = combined_image->getColor({{x, y}}).normalized(weight);
-						render_callbacks_.highlight_pixel_(x, y, col.r_, col.g_, col.b_, col.a_, render_callbacks_.highlight_pixel_data_);
+						highlight_pixel_callback_(x, y, col.r_, col.g_, col.b_, col.a_, highlight_pixel_callback_data_);
 					}
 				}
 			}
@@ -473,7 +473,7 @@ int ImageFilm::nextPass(bool adaptive_aa, const std::string &integrator_name, co
 		n_resample = params_.height_ * params_.width_;
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
+	if(flush_callback_) flush_callback_(flush_callback_data_);
 
 	if(render_control_.resumed()) pass_string << "Film loaded + ";
 
@@ -504,11 +504,11 @@ bool ImageFilm::nextArea(RenderArea &a)
 			a.sy_0_ = a.y_ + ifilterw;
 			a.sy_1_ = a.y_ + a.h_ - ifilterw;
 
-			if(render_callbacks_.highlight_area_)
+			if(highlight_area_callback_)
 			{
 				const int end_x = a.x_ + a.w_;
 				const int end_y = a.y_ + a.h_;
-				render_callbacks_.highlight_area_(a.id_, a.x_, a.y_, end_x, end_y, render_callbacks_.highlight_area_data_);
+				highlight_area_callback_(a.id_, a.x_, a.y_, end_x, end_y, highlight_area_callback_data_);
 			}
 			return true;
 		}
@@ -566,15 +566,15 @@ void ImageFilm::finishArea(const RenderArea &a, const EdgeToonParams &edge_param
 					default: break;
 				}
 				exported_image_layers_.setColor({{i, j}}, color, layer_def);
-				if(render_callbacks_.put_pixel_)
+				if(put_pixel_callback_)
 				{
-					render_callbacks_.put_pixel_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					put_pixel_callback_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, put_pixel_callback_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_area_) render_callbacks_.flush_area_(a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, render_callbacks_.flush_area_data_);
+	if(flush_area_callback_) flush_area_callback_(a.id_, a.x_, a.y_, end_x + params_.start_x_, end_y + params_.start_y_, flush_area_callback_data_);
 
 	if(render_control_.inProgress())
 	{
@@ -648,15 +648,15 @@ void ImageFilm::flush(Flags flags)
 				}
 				if(estimate_density_ && (flags & Densityimage) && layer_def == LayerDef::Combined && density_factor > 0.f) color += Rgba((*density_image_)({{i, j}}) * density_factor, 0.f);
 				exported_image_layers_.setColor({{i, j}}, color, layer_def);
-				if(render_callbacks_.put_pixel_)
+				if(put_pixel_callback_)
 				{
-					render_callbacks_.put_pixel_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, render_callbacks_.put_pixel_data_);
+					put_pixel_callback_(LayerDef::getName(layer_def).c_str(), i, j, color.r_, color.g_, color.b_, color.a_, put_pixel_callback_data_);
 				}
 			}
 		}
 	}
 
-	if(render_callbacks_.flush_) render_callbacks_.flush_(render_callbacks_.flush_data_);
+	if(flush_callback_) flush_callback_(flush_callback_data_);
 
 	if(render_control_.finished())
 	{
@@ -1311,40 +1311,40 @@ void ImageFilm::defineDependentLayers()
 	}
 }
 
-void ImageFilm::setRenderNotifyLayerCallback(yafaray_RenderNotifyLayerCallback callback, void *callback_data)
+void ImageFilm::setRenderNotifyLayerCallback(yafaray_FilmNotifyLayerCallback callback, void *callback_data)
 {
-	render_callbacks_.notify_layer_ = callback;
-	render_callbacks_.notify_layer_data_ = callback_data;
+	notify_layer_callback_ = callback;
+	notify_layer_callback_data_ = callback_data;
 }
 
-void ImageFilm::setRenderPutPixelCallback(yafaray_RenderPutPixelCallback callback, void *callback_data)
+void ImageFilm::setRenderPutPixelCallback(yafaray_FilmPutPixelCallback callback, void *callback_data)
 {
-	render_callbacks_.put_pixel_ = callback;
-	render_callbacks_.put_pixel_data_ = callback_data;
+	put_pixel_callback_ = callback;
+	put_pixel_callback_data_ = callback_data;
 }
 
-void ImageFilm::setRenderHighlightPixelCallback(yafaray_RenderHighlightPixelCallback callback, void *callback_data)
+void ImageFilm::setRenderHighlightPixelCallback(yafaray_FilmHighlightPixelCallback callback, void *callback_data)
 {
-	render_callbacks_.highlight_pixel_ = callback;
-	render_callbacks_.highlight_pixel_data_ = callback_data;
+	highlight_pixel_callback_ = callback;
+	highlight_pixel_callback_data_ = callback_data;
 }
 
-void ImageFilm::setRenderFlushAreaCallback(yafaray_RenderFlushAreaCallback callback, void *callback_data)
+void ImageFilm::setRenderFlushAreaCallback(yafaray_FilmFlushAreaCallback callback, void *callback_data)
 {
-	render_callbacks_.flush_area_ = callback;
-	render_callbacks_.flush_area_data_ = callback_data;
+	flush_area_callback_ = callback;
+	flush_area_callback_data_ = callback_data;
 }
 
-void ImageFilm::setRenderFlushCallback(yafaray_RenderFlushCallback callback, void *callback_data)
+void ImageFilm::setRenderFlushCallback(yafaray_FilmFlushCallback callback, void *callback_data)
 {
-	render_callbacks_.flush_ = callback;
-	render_callbacks_.flush_data_ = callback_data;
+	flush_callback_ = callback;
+	flush_callback_data_ = callback_data;
 }
 
-void ImageFilm::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallback callback, void *callback_data)
+void ImageFilm::setRenderHighlightAreaCallback(yafaray_FilmHighlightAreaCallback callback, void *callback_data)
 {
-	render_callbacks_.highlight_area_ = callback;
-	render_callbacks_.highlight_area_data_ = callback_data;
+	highlight_area_callback_ = callback;
+	highlight_area_callback_data_ = callback_data;
 }
 
 void ImageFilm::clearOutputs()

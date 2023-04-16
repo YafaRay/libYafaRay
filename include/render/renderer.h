@@ -23,7 +23,6 @@
 #define LIBYAFARAY_RENDERER_H
 
 #include "public_api/yafaray_c_api.h"
-#include "render/render_callbacks.h"
 #include "render/render_control.h"
 #include "common/aa_noise_params.h"
 #include "common/mask_edge_toon_params.h"
