@@ -86,12 +86,12 @@ ParamMap PhotonIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<SurfaceIntegrator *, ParamResult> PhotonIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {new PhotonIntegrator(logger, param_result, name, param_map)};
+	auto integrator {std::make_unique<PhotonIntegrator>(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {integrator, param_result};
+	return {std::move(integrator), param_result};
 }
 
 void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherData *gdata, float ds_rad, int n_search)
@@ -111,6 +111,7 @@ void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherD
 
 	while(start < total)
 	{
+		if(render_control.canceled()) return;
 		for(unsigned int n = start; n < end; ++n)
 		{
 			radius = ds_radius_2;//actually the square radius...
@@ -169,6 +170,7 @@ void PhotonIntegrator::diffuseWorker(RenderControl &render_control, PreGatherDat
 	const float inv_diff_photons = 1.f / static_cast<float>(photons_diffuse_);
 	while(!done)
 	{
+		if(render_control.canceled()) return;
 		unsigned int haltoncurr = curr + n_diffuse_photons_thread * thread_id;
 		const float s_1 = sample::riVdC(haltoncurr);
 		const float s_2 = Halton::lowDiscrepancySampling(fast_random_, 2, haltoncurr);
@@ -276,9 +278,9 @@ void PhotonIntegrator::diffuseWorker(RenderControl &render_control, PreGatherDat
 	pgdat.unlock();
 }
 
-void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map)
+void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map, const RenderControl &render_control)
 {
-	photon_map->updateTree();
+	photon_map->updateTree(render_control);
 }
 
 bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
@@ -396,13 +398,13 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			render_control.setProgressBarTag("Building diffuse photons kd-tree...");
-			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get());
+			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get(), std::ref(render_control));
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
 			render_control.setProgressBarTag("Building diffuse photons kd-tree...");
-			getDiffuseMap()->updateTree();
+			getDiffuseMap()->updateTree(render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
@@ -466,13 +468,13 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get());
+			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get(), std::ref(render_control));
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
 			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			getCausticMap()->updateTree();
+			getCausticMap()->updateTree(render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
@@ -486,7 +488,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 	if(use_photon_diffuse_ && params_.final_gather_) //create radiance map:
 	{
 		// == remove too close radiance points ==//
-		auto r_tree = std::make_unique<kdtree::PointKdTree<RadData>>(logger_, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_);
+		auto r_tree = std::make_unique<kdtree::PointKdTree<RadData>>(logger_, render_control, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_);
 		std::vector< RadData > cleaned;
 		for(const auto &rad_point : pgdat.rad_points_)
 		{
@@ -514,7 +516,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		render_control.setProgressBarAsDone();
 		render_control.setProgressBarTag("Pregathering radiance data done...");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Radiance tree built... Updating the tree...");
-		getRadianceMap()->updateTree();
+		getRadianceMap()->updateTree(render_control);
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 	}
 
@@ -664,15 +666,15 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 	return path_col / (float)n_sampl;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto base_sampling_offset{image_film->getBaseSamplingOffset()};
-	const auto camera{image_film->getCamera()};
+	const auto base_sampling_offset{image_film.getBaseSamplingOffset()};
+	const auto camera{image_film.getCamera()};
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera);
 	ray.tmax_ = tmax;
 	if(sp)
@@ -821,7 +823,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm *image_film, Ray &ra
 	}
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_.get(), MonteCarloIntegrator::params_.transparent_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, *vol_integrator_, MonteCarloIntegrator::params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
 }

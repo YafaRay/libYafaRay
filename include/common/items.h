@@ -30,6 +30,7 @@ namespace yafaray {
 
 class Logger;
 class ParamMap;
+class RenderControl;
 struct ParamResult;
 
 template <typename T>

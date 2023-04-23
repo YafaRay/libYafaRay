@@ -30,7 +30,6 @@
 
 namespace yafaray {
 
-
 template <typename T>
 template <typename K>
 std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &map, const std::string &name, const ParamMap &param_map, const K &items_container)

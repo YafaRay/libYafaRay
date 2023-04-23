@@ -5,6 +5,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_createLogger;
         yafaray_setLoggerCallbacks;
         yafaray_destroyLogger;
+        yafaray_createRenderControl;
+        yafaray_destroyRenderControl;
         yafaray_createFilm;
         yafaray_destroyFilm;
         yafaray_createScene;

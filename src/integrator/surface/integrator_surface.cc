@@ -32,6 +32,7 @@
 #include "light/light.h"
 #include "common/string.h"
 #include "common/sysinfo.h"
+#include "render/progress_bar.h"
 
 namespace yafaray {
 
@@ -162,7 +163,7 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<SurfaceIntegrator *, ParamResult> SurfaceIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> SurfaceIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
 	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
@@ -303,7 +304,7 @@ int SurfaceIntegrator::setNumThreads(int threads)
 
 	std::stringstream set;
 	set << "CPU threads=" << result << std::endl;
-	//render_control.setRenderInfo(set.str()); //FIXME Render stats
+	//render_control_.setRenderInfo(set.str()); //FIXME Render stats
 	return result;
 }
 

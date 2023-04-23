@@ -61,15 +61,15 @@ ParamMap AcceleratorKdTreeMultiThread::getAsParamMap(bool only_non_default) cons
 	return param_map;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorKdTreeMultiThread::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorKdTreeMultiThread::factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto accelerator {std::make_unique<AcceleratorKdTreeMultiThread>(logger, param_result, primitives, param_map)};
+	auto accelerator {std::make_unique<AcceleratorKdTreeMultiThread>(logger, param_result, render_control, primitives, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>("", {"type"}));
 	return {std::move(accelerator), param_result};
 }
 
-AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, render_control, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
@@ -404,6 +404,7 @@ AcceleratorKdTreeMultiThread::Result AcceleratorKdTreeMultiThread::buildTree(con
 
 void AcceleratorKdTreeMultiThread::buildTreeWorker(const std::vector<const Primitive *> &primitives, const Bound<float> &node_bound, const std::vector<uint32_t> &indices, int depth, uint32_t next_node_id, int bad_refines, const std::vector<Bound<float>> &bounds, const Params &parameters, const ClipPlane &clip_plane, const std::vector<PolyDouble> &polygons, const std::vector<uint32_t> &primitive_indices, Result &result, std::atomic<int> &num_current_threads) const
 {
+	if(render_control_ && render_control_->canceled()) return;
 	//Note: "indices" are:
 	// * primitive indices when not clipping primitives as polygons. In that case all primitive bounds are present using the same indexing as the complete primitive list
 	// * polygon indices when clipping. In that case only the polygon bounds are present using the same indexing as the polygons list. In this case

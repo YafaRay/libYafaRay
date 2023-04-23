@@ -38,10 +38,10 @@ class Accelerator
 {
 	public:
 		inline static std::string getClassName() { return "Accelerator"; }
-		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 
-		explicit Accelerator(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger} { }
+		explicit Accelerator(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}, render_control_{render_control} { }
 		virtual ~Accelerator() = default;
 		virtual IntersectData intersect(const Ray &ray, float t_max) const = 0;
 		virtual IntersectData intersectShadow(const Ray &ray, float t_max) const = 0;
@@ -77,6 +77,7 @@ class Accelerator
 			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 		} params_;
 		Logger &logger_;
+		const RenderControl *render_control_{nullptr};
 		static constexpr inline float min_raydist_ = 0.00005f;
 		static constexpr inline float shadow_bias_ = 0.0005f;
 };

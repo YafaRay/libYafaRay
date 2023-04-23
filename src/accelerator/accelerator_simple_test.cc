@@ -20,6 +20,7 @@
 #include "geometry/primitive/primitive.h"
 #include "param/param.h"
 #include "common/logger.h"
+#include "render/render_control.h"
 
 namespace yafaray {
 
@@ -40,15 +41,15 @@ ParamMap AcceleratorSimpleTest::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorSimpleTest::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorSimpleTest::factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto accelerator {std::make_unique<AcceleratorSimpleTest>(logger, param_result, primitives, param_map)};
+	auto accelerator {std::make_unique<AcceleratorSimpleTest>(logger, param_result, render_control, primitives, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>("", {"type"}));
 	return {std::move(accelerator), param_result};
 }
 
-AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, primitives_(primitives)
+AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, render_control, param_map}, params_{param_result, param_map}, primitives_(primitives)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const size_t num_primitives = primitives_.size();
@@ -56,6 +57,7 @@ AcceleratorSimpleTest::AcceleratorSimpleTest(Logger &logger, ParamResult &param_
 	else bound_ = {{{0.f, 0.f, 0.f}}, {{0.f, 0.f, 0.f}}};
 	for(const auto &primitive : primitives)
 	{
+		if(render_control_ && render_control_->canceled()) return;
 		const Bound primitive_bound{primitive->getBound()};
 		const uintptr_t object_handle{primitive->getObjectHandle()};
 		const auto &obj_bound_it{object_handles_.find(object_handle)};

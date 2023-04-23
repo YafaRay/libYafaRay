@@ -17,11 +17,12 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_PKDTREE_H
-#define YAFARAY_PKDTREE_H
+#ifndef LIBYAFARAY_PKDTREE_H
+#define LIBYAFARAY_PKDTREE_H
 
 #include "common/logger.h"
 #include "geometry/bound.h"
+#include "render/render_control.h"
 #include <vector>
 #include <cstdlib>
 #include <thread>
@@ -78,7 +79,7 @@ class PointKdTree
 {
 	public:
 		PointKdTree() = default;
-		PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
+		PointKdTree(Logger &logger, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
 		template<typename LookupProc> void lookup(const Point3f &p, LookupProc &proc, float &max_dist_squared) const;
 	protected:
@@ -91,6 +92,7 @@ class PointKdTree
 		};
 		void buildTree(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims);
 		void buildTreeWorker(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes);
+		const RenderControl &render_control_;
 		KdNode<T> *nodes_;
 		uint32_t n_elements_, next_free_node_;
 		Bound<float> tree_bound_;
@@ -100,7 +102,7 @@ class PointKdTree
 };
 
 template<typename T>
-PointKdTree<T>::PointKdTree(Logger &logger, const std::vector<T> &dat, const std::string &map_name, int num_threads)
+PointKdTree<T>::PointKdTree(Logger &logger, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads) : render_control_{render_control}
 {
 	next_free_node_ = 0;
 	n_elements_ = dat.size();
@@ -140,6 +142,7 @@ void PointKdTree<T>::buildTree(uint32_t start, uint32_t end, Bound<float> &node_
 template<typename T>
 void PointKdTree<T>::buildTreeWorker(uint32_t start, uint32_t end, Bound<float> &node_bound, const T **prims, int level, uint32_t &local_next_free_node, KdNode<T> *local_nodes)
 {
+	if(render_control_.canceled()) return;
 	++level;
 	if(end - start == 1)
 	{
@@ -322,4 +325,4 @@ void PointKdTree<T>::recursiveLookup(const Point3f &p, const LookupProc &proc, f
 
 } //namespace yafaray
 
-#endif // YAFARAY_PKDTREE_H
+#endif // LIBYAFARAY_PKDTREE_H

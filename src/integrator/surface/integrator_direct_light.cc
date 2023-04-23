@@ -38,12 +38,12 @@ ParamMap DirectLightIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<SurfaceIntegrator *, ParamResult> DirectLightIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> DirectLightIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {new DirectLightIntegrator(logger, param_result, name, param_map)};
+	auto integrator {std::make_unique<DirectLightIntegrator>(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {integrator, param_result};
+	return {std::move(integrator), param_result};
 }
 
 DirectLightIntegrator::DirectLightIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : ParentClassType_t(logger, param_result, name, param_map)
@@ -93,12 +93,12 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, const Scen
 	return success;
 }
 
-std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto base_sampling_offset{image_film->getBaseSamplingOffset()};
-	const auto camera{image_film->getCamera()};
+	const auto base_sampling_offset{image_film.getBaseSamplingOffset()};
+	const auto camera{image_film.getCamera()};
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera);
 	ray.tmax_ = tmax;
 	if(sp)
@@ -145,7 +145,7 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm *image_film, Ra
 	}
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_.get(), MonteCarloIntegrator::params_.transparent_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, *vol_integrator_, MonteCarloIntegrator::params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
 }

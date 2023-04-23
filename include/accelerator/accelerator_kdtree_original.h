@@ -41,9 +41,9 @@ class AcceleratorKdTree final : public Accelerator
 
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
-		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &params);
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
-		AcceleratorKdTree(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
+		AcceleratorKdTree(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 		~AcceleratorKdTree() override;
 
 	private:

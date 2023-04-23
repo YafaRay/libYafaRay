@@ -31,10 +31,10 @@ ExportC::ExportC(const char *fname, const ::yafaray_LoggerCallback logger_callba
 	file_.open(file_name_.c_str());
 	if(!file_.is_open())
 	{
-		logger_->logError("CExport: Couldn't open ", file_name_);
+		logger_.logError("CExport: Couldn't open ", file_name_);
 		return;
 	}
-	else logger_->logInfo("CExport: Writing scene to: ", file_name_);
+	else logger_.logInfo("CExport: Writing scene to: ", file_name_);
 	file_ << generateHeader();
 }
 
@@ -101,7 +101,7 @@ void ExportC::createScene() noexcept
 
 void ExportC::clearAll() noexcept
 {
-	if(logger_->isVerbose()) logger_->logVerbose("CExport: cleaning up...");
+	if(logger_.isVerbose()) logger_.logVerbose("CExport: cleaning up...");
 	if(file_.is_open())
 	{
 		file_.flush();

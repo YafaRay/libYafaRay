@@ -269,7 +269,7 @@ bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float
 	return true;
 }
 
-bool Scene::init()
+bool Scene::init(const RenderControl &render_control)
 {
 	std::vector<const Primitive *> primitives;
 	for(const auto &[object, object_name, object_enabled] : objects_)
@@ -305,7 +305,7 @@ bool Scene::init()
 	params["type"] = scene_accelerator_;
 	params["accelerator_threads"] = getNumThreads();
 
-	accelerator_ = Accelerator::factory(logger_, primitives, params).first;
+	accelerator_ = Accelerator::factory(logger_, &render_control, primitives, params).first;
 	*scene_bound_ = accelerator_->getBound();
 	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 

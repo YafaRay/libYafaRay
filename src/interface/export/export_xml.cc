@@ -32,10 +32,10 @@ ExportXml::ExportXml(const char *fname, const ::yafaray_LoggerCallback logger_ca
 	file_.open(file_name_.c_str());
 	if(!file_.is_open())
 	{
-		logger_->logError("XmlExport: Couldn't open ", file_name_);
+		logger_.logError("XmlExport: Couldn't open ", file_name_);
 		return;
 	}
-	else logger_->logInfo("XmlExport: Writing scene to: ", file_name_);
+	else logger_.logInfo("XmlExport: Writing scene to: ", file_name_);
 	file_ << std::boolalpha;
 	file_ << "<?xml version=\"1.0\"?>\n";
 	file_ << "<yafaray_xml format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n\n";
@@ -51,7 +51,7 @@ void ExportXml::createScene() noexcept
 
 void ExportXml::clearAll() noexcept
 {
-	if(logger_->isVerbose()) logger_->logVerbose("XmlExport: cleaning up...");
+	if(logger_.isVerbose()) logger_.logVerbose("XmlExport: cleaning up...");
 	if(file_.is_open())
 	{
 		file_.flush();

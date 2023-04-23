@@ -95,7 +95,7 @@ void ObjectLight::initIs()
 	ParamMap params;
 	params["type"] = std::string("yafaray-kdtree-original"); //Do not remove the std::string(), entering directly a string literal can be confused with bool
 	params["depth"] = -1;
-	accelerator_ = Accelerator::factory(logger_, primitives_, params).first;
+	accelerator_ = Accelerator::factory(logger_, nullptr, primitives_, params).first;
 }
 
 size_t ObjectLight::init(const Scene &scene)

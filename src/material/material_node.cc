@@ -168,12 +168,12 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 	return shaders_table;
 }
 
-void NodeMaterial::parseNodes(const ParamMap &params, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger)
+void NodeMaterial::parseNodes(Logger &logger, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, const ParamMap &param_map)
 {
 	for(auto &[shader_name, shader] : root_nodes_map)
 	{
 		std::string name;
-		if(params.getParam(shader_name, name).isOk())
+		if(param_map.getParam(shader_name, name).isOk())
 		{
 			const auto node_found = shaders_table.find(name);
 			if(node_found != shaders_table.end())

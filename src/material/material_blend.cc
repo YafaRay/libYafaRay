@@ -82,7 +82,7 @@ std::pair<std::unique_ptr<Material>, ParamResult> BlendMaterial::factory(Logger 
 		root_nodes_map[ShaderNodeType{shader_index}.print()] = nullptr;
 	}
 	std::vector<const ShaderNode *> root_nodes_list;
-	if(!material->nodes_map_.empty()) parseNodes(param_map, root_nodes_list, root_nodes_map, material->nodes_map_, logger);
+	if(!material->nodes_map_.empty()) parseNodes(logger, root_nodes_list, root_nodes_map, material->nodes_map_, param_map);
 	for(size_t shader_index = 0; shader_index < material->shaders_.size(); ++shader_index)
 	{
 		material->shaders_[shader_index] = root_nodes_map[ShaderNodeType{shader_index}.print()];

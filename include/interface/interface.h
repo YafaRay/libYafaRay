@@ -133,7 +133,7 @@ class Interface
 		std::unique_ptr<Logger> logger_;
 		std::unique_ptr<ParamMap> params_;
 		std::list<ParamMap> nodes_params_; //! for materials that need to define a whole shader tree etc.
-		ParamMap *cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a nodes_params element
+		ParamMap &cparams_ = nullptr; //! just a pointer to the current paramMap, either params or a nodes_params element
 		std::unique_ptr<Scene> scene_;
 		float input_gamma_ = 1.f;
 		ColorSpace input_color_space_ = ColorSpace::RawManualGamma;

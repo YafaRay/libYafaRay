@@ -46,7 +46,7 @@ void monitorCallback(int steps_total, int steps_done, const char *tag, void *cal
 void loggerCallback(yafaray_LogLevel log_level, size_t datetime, const char *time_of_day, const char *description, void *callback_data);
 
 yafaray_Logger *logger = NULL;
-yafaray_Film *film = NULL;
+yafaray_RenderControl *render_control = NULL;
 
 #ifdef _WIN32
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
@@ -54,7 +54,7 @@ BOOL WINAPI ctrlCHandler_global(DWORD signal)
 	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
 	if(film)
 	{
-		yafaray_cancelRendering(logger, film);
+		yafaray_cancelRendering(render_control);
 		return TRUE;
 	}
 	else exit(1);
@@ -63,17 +63,18 @@ BOOL WINAPI ctrlCHandler_global(DWORD signal)
 void ctrlCHandler_global(int signal)
 {
 	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
-	if(film) yafaray_cancelRendering(logger, film);
+	if(render_control) yafaray_cancelRendering(render_control);
 	else exit(1);
 }
 #endif
 
-int main()
+int main(void)
 {
 	yafaray_ParamMap *param_map = NULL;
 	yafaray_ParamMapList *param_map_list = NULL;
 	yafaray_Scene *scene = NULL;
 	yafaray_SurfaceIntegrator *surface_integrator = NULL;
+	yafaray_Film *film = NULL;
 	FILE *fp = NULL;
 	size_t material_id = 0;
 	size_t object_id = 0;
@@ -130,7 +131,7 @@ int main()
 	yafaray_setParamMapString(param_map, "type", "photonmapping");
 	yafaray_setParamMapInt(param_map, "threads", -1);
 	yafaray_setParamMapInt(param_map, "threads_photons", -1);
-	surface_integrator = yafaray_createSurfaceIntegrator(logger, scene, "surface integrator", param_map);
+	surface_integrator = yafaray_createSurfaceIntegrator(logger, "surface integrator", param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
@@ -265,10 +266,12 @@ int main()
 	yafaray_destroyCharString(layers_string);
 
 	/* Rendering */
-	yafaray_preprocessScene(scene);
-	yafaray_preprocessSurfaceIntegrator(surface_integrator, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
-	yafaray_render(surface_integrator, film, scene, monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	render_control = yafaray_createRenderControl(monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	yafaray_preprocessScene(render_control, scene);
+	yafaray_preprocessSurfaceIntegrator(render_control, surface_integrator, scene);
+	yafaray_render(render_control, surface_integrator, film, scene);
 	printf("END: total_steps = %d\n", total_steps);
+	yafaray_destroyRenderControl(render_control);
 
 	/* Destruction/deallocation */
 	yafaray_destroySurfaceIntegrator(surface_integrator);

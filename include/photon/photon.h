@@ -67,7 +67,7 @@ class PhotonMap final
 		void swapVector(std::vector<Photon> &vec) { photons_.swap(vec); updated_ = false; }
 		void appendVector(std::vector<Photon> &vec, unsigned int curr) { photons_.insert(std::end(photons_), std::begin(vec), std::end(vec)); updated_ = false; paths_ += curr;}
 		void reserveMemory(size_t num_photons) { photons_.reserve(num_photons); }
-		void updateTree();
+		void updateTree(const RenderControl &render_control);
 		void clear() { photons_.clear(); tree_ = nullptr; updated_ = false; }
 		bool ready() const { return updated_; }
 		//	void gather(const point3d_t &P, std::vector< foundPhoton_t > &found, unsigned int K, float &sqRadius) const;

@@ -30,6 +30,7 @@ extern "C" {
 
 	/* Opaque structs/objects pointers */
 	typedef struct yafaray_Logger yafaray_Logger;
+	typedef struct yafaray_RenderControl yafaray_RenderControl;
 	typedef struct yafaray_Scene yafaray_Scene;
 	typedef struct yafaray_ParamMap yafaray_ParamMap;
 	typedef struct yafaray_ParamMapList yafaray_ParamMapList;
@@ -73,6 +74,8 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
 	YAFARAY_C_API_EXPORT void yafaray_setLoggerCallbacks(yafaray_Logger *logger, yafaray_LoggerCallback logger_callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_destroyLogger(yafaray_Logger *logger);
+	YAFARAY_C_API_EXPORT yafaray_RenderControl *yafaray_createRenderControl(yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
+	YAFARAY_C_API_EXPORT void yafaray_destroyRenderControl(yafaray_RenderControl *render_control);
 	YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_SurfaceIntegrator *surface_integrator, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroyFilm(yafaray_Film *film);
 	YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map);
@@ -82,7 +85,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT yafaray_ParamMapList *yafaray_createParamMapList();
 	YAFARAY_C_API_EXPORT void yafaray_clearParamMapList(yafaray_ParamMapList *param_map_list);
 	YAFARAY_C_API_EXPORT void yafaray_destroyParamMapList(yafaray_ParamMapList *param_map_list);
-	YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logger, const yafaray_Scene *scene, const char *name, const yafaray_ParamMap *param_map);
+	YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_destroySurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmWidth(const yafaray_Film *film);
 	YAFARAY_C_API_EXPORT int yafaray_getFilmHeight(const yafaray_Film *film);
@@ -131,9 +134,9 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setFlushAreaCallback(yafaray_Film *film, yafaray_FilmFlushAreaCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setFlushCallback(yafaray_Film *film, yafaray_FilmFlushCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_FilmHighlightAreaCallback callback, void *callback_data);
-	YAFARAY_C_API_EXPORT void yafaray_preprocessScene(yafaray_Scene *scene);
-	YAFARAY_C_API_EXPORT void yafaray_preprocessSurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
-	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene, yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console);
+	YAFARAY_C_API_EXPORT void yafaray_preprocessScene(yafaray_RenderControl *render_control, yafaray_Scene *scene);
+	YAFARAY_C_API_EXPORT void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene);
+	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_RenderControl *render_control, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);
@@ -145,7 +148,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_printParams(yafaray_Logger *logger, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printWarning(yafaray_Logger *logger, const char *msg);
 	YAFARAY_C_API_EXPORT void yafaray_printError(yafaray_Logger *logger, const char *msg);
-	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_Logger *logger, yafaray_Film *film);
+	YAFARAY_C_API_EXPORT void yafaray_cancelRendering(yafaray_RenderControl *render_control);
 	YAFARAY_C_API_EXPORT void yafaray_setInputColorSpace(yafaray_ParamMap *param_map, const char *color_space_string, float gamma_val);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getImageId(yafaray_Scene *scene, const char *name, size_t *id_obtained);
 	YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createImage(yafaray_Scene *scene, const char *name, size_t *id_obtained, const yafaray_ParamMap *param_map);

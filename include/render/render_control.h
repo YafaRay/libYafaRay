@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_RENDER_CONTROL_H
-#define YAFARAY_RENDER_CONTROL_H
+#ifndef LIBYAFARAY_RENDER_CONTROL_H
+#define LIBYAFARAY_RENDER_CONTROL_H
 
 #include "common/timer.h"
 #include <string>
@@ -80,4 +80,4 @@ class RenderControl final
 
 } //namespace yafaray
 
-#endif //YAFARAY_RENDER_CONTROL_H
+#endif //LIBYAFARAY_RENDER_CONTROL_H

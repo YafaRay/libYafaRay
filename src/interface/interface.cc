@@ -44,7 +44,7 @@ Interface::Interface(const ::yafaray_LoggerCallback logger_callback, void *callb
 
 void Interface::setLoggingCallback(const ::yafaray_LoggerCallback logger_callback, void *callback_data) noexcept
 {
-	logger_->setCallback(logger_callback, callback_data);
+	logger_.setCallback(logger_callback, callback_data);
 }
 
 void Interface::createScene() noexcept
@@ -55,18 +55,18 @@ void Interface::createScene() noexcept
 
 Interface::~Interface() noexcept
 {
-	if(logger_->isVerbose()) logger_->logVerbose("Interface: Deleting scene...");
-	logger_->logInfo("Interface: Done.");
+	if(logger_.isVerbose()) logger_.logVerbose("Interface: Deleting scene...");
+	logger_.logInfo("Interface: Done.");
 }
 
 void Interface::clearAll() noexcept
 {
-	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleaning scene...");
+	if(logger_.isVerbose()) logger_.logVerbose("Interface: Cleaning scene...");
 	scene_->clearAll();
 	params_->clear();
 	nodes_params_.clear();
 	cparams_ = params_.get();
-	if(logger_->isVerbose()) logger_->logVerbose("Interface: Cleanup done.");
+	if(logger_.isVerbose()) logger_.logVerbose("Interface: Cleanup done.");
 }
 
 void Interface::defineLayer() noexcept
@@ -257,15 +257,15 @@ void Interface::setRenderHighlightAreaCallback(yafaray_RenderHighlightAreaCallba
 
 int Interface::getSceneFilmWidth() const noexcept
 {
-	const ImageFilm *image_film = scene_->getImageFilm();
-	if(image_film) return image_film->getWidth();
+	const ImageFilm &image_film = scene_->getImageFilm();
+	if(image_film) return image_film.getWidth();
 	else return 0;
 }
 
 int Interface::getSceneFilmHeight() const noexcept
 {
-	const ImageFilm *image_film = scene_->getImageFilm();
-	if(image_film) return image_film->getHeight();
+	const ImageFilm &image_film = scene_->getImageFilm();
+	if(image_film) return image_film.getHeight();
 	else return 0;
 }
 
@@ -303,37 +303,37 @@ void Interface::clearOutputs() noexcept
 void Interface::cancel() noexcept
 {
 	if(scene_) scene_->getRenderControl().setCanceled();
-	logger_->logWarning("Interface: Render canceled by user.");
+	logger_.logWarning("Interface: Render canceled by user.");
 }
 
 void Interface::printDebug(const std::string &msg) const noexcept
 {
-	if(logger_->isDebug())logger_->logDebug(msg);
+	if(logger_.isDebug())logger_.logDebug(msg);
 }
 
 void Interface::printVerbose(const std::string &msg) const noexcept
 {
-	if(logger_->isVerbose()) logger_->logVerbose(msg);
+	if(logger_.isVerbose()) logger_.logVerbose(msg);
 }
 
 void Interface::printInfo(const std::string &msg) const noexcept
 {
-	logger_->logInfo(msg);
+	logger_.logInfo(msg);
 }
 
 void Interface::printParams(const std::string &msg) const noexcept
 {
-	logger_->logParams(msg);
+	logger_.logParams(msg);
 }
 
 void Interface::printWarning(const std::string &msg) const noexcept
 {
-	logger_->logWarning(msg);
+	logger_.logWarning(msg);
 }
 
 void Interface::printError(const std::string &msg) const noexcept
 {
-	logger_->logError(msg);
+	logger_.logError(msg);
 }
 
 void Interface::setupRender() noexcept
@@ -348,22 +348,22 @@ void Interface::render(std::unique_ptr<ProgressBar> progress_bar) noexcept
 
 void Interface::enablePrintDateTime(bool value) noexcept
 {
-	logger_->enablePrintDateTime(value);
+	logger_.enablePrintDateTime(value);
 }
 
 void Interface::setConsoleVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept
 {
-	logger_->setConsoleMasterVerbosity(log_level);
+	logger_.setConsoleMasterVerbosity(log_level);
 }
 
 void Interface::setLogVerbosityLevel(const ::yafaray_LogLevel &log_level) noexcept
 {
-	logger_->setLogMasterVerbosity(log_level);
+	logger_.setLogMasterVerbosity(log_level);
 }
 
 void Interface::setConsoleLogColorsEnabled(bool console_log_colors_enabled) const noexcept
 {
-	logger_->setConsoleLogColorsEnabled(console_log_colors_enabled);
+	logger_.setConsoleLogColorsEnabled(console_log_colors_enabled);
 }
 
 std::pair<Rgba, bool> Interface::getImageColor(size_t image_id, const Point2i &point) const noexcept

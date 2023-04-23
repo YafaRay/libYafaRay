@@ -89,12 +89,12 @@ ParamMap BidirectionalIntegrator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<SurfaceIntegrator *, ParamResult> BidirectionalIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> BidirectionalIntegrator::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto integrator {new BidirectionalIntegrator(logger, param_result, name, param_map)};
+	auto integrator {std::make_unique<BidirectionalIntegrator>(logger, param_result, name, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(getClassName(), {"type"}));
-	return {integrator, param_result};
+	return {std::move(integrator), param_result};
 }
 
 /*! class that holds some vertex y_i/z_i (depending on wether it is a light or camera path)*/
@@ -212,7 +212,7 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, const Sc
 		logger_.logDebug(getName(), ": preprocess(): lights: ", numLights(), " invIntegral:", light_power_d_->invIntegral());
 	}
 	//nPaths = 0;
-	//image_film->setDensityEstimation(true);
+	//image_film.setDensityEstimation(true);
 	//lightImage->init();
 	// test...
 	/*
@@ -253,26 +253,26 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, const Sc
 	return success;
 }
 
-void BidirectionalIntegrator::cleanup(ImageFilm *image_film) const
+void BidirectionalIntegrator::cleanup(ImageFilm &image_film) const
 {
 	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
-	image_film->setNumDensitySamples(n_paths_); //dirty hack...
+	image_film.setNumDensitySamples(n_paths_); //dirty hack...
 }
 
-bool BidirectionalIntegrator::render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest)
+bool BidirectionalIntegrator::render(RenderControl &render_control, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
-	image_film->setDensityEstimation(true);
-	return ParentClassType_t::render(image_film, object_index_highest, material_index_highest);
+	image_film.setDensityEstimation(true);
+	return ParentClassType_t::render(render_control, image_film, object_index_highest, material_index_highest);
 }
 
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm *image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto camera{image_film->getCamera()};
+	const auto camera{image_film.getCamera()};
 	const auto [sp, tmax] = accelerator_->intersect(ray, camera); //FIXME: should we change directly ray.tmax_ here or not?
 	if(sp)
 	{
@@ -359,7 +359,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm *image_film, 
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
 				idy = std::modf(path_data.v_, &iy);
-				image_film->addDensitySample(li_col, {{static_cast<int>(ix), static_cast<int>(iy)}}, idx, idy);
+				image_film.addDensitySample(li_col, {{static_cast<int>(ix), static_cast<int>(iy)}}, idx, idy);
 			}
 		}
 #endif
@@ -426,7 +426,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm *image_film, 
 
 	if(vol_integrator_)
 	{
-		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, vol_integrator_.get(), params_.transparent_background_);
+		applyVolumetricEffects(col, alpha, color_layers, ray, random_generator, *vol_integrator_, params_.transparent_background_);
 	}
 	return {std::move(col), alpha};
 }
@@ -908,7 +908,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
         {
             // ...shadowed...
             lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-            shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+            shadowed = (trShad) ? scene.isShadowed(state, lightRay, sDepth, scol) : scene.isShadowed(state, lightRay);
             if(!shadowed)
             {
                 if(trShad) lcol *= scol;
@@ -927,7 +927,7 @@ Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, co
         {
             // ...shadowed...
             lightRay.tmin = 0.0005; // < better add some _smart_ self-bias value...this is bad.
-            shadowed = (trShad) ? scene->isShadowed(state, lightRay, sDepth, scol) : scene->isShadowed(state, lightRay);
+            shadowed = (trShad) ? scene.isShadowed(state, lightRay, sDepth, scol) : scene.isShadowed(state, lightRay);
             if(!shadowed)
             {
                 if(trShad) lcol *= scol;

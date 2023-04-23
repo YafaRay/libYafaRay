@@ -54,15 +54,15 @@ ParamMap AcceleratorKdTree::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorKdTree::factory(Logger &logger, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> AcceleratorKdTree::factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {})};
-	auto accelerator {std::make_unique<AcceleratorKdTree>(logger, param_result, primitives, param_map)};
+	auto accelerator {std::make_unique<AcceleratorKdTree>(logger, param_result, render_control, primitives, param_map)};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>("", {"type"}));
 	return {std::move(accelerator), param_result};
 }
 
-AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamResult &param_result, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+AcceleratorKdTree::AcceleratorKdTree(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map) : ParentClassType_t{logger, param_result, render_control, param_map}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	total_prims_ = static_cast<uint32_t>(primitives.size());
@@ -436,6 +436,7 @@ AcceleratorKdTree::SplitCost AcceleratorKdTree::minimalCost(Logger &logger, floa
 
 int AcceleratorKdTree::buildTree(uint32_t n_prims, const std::vector<const Primitive *> &original_primitives, const Bound<float> &node_bound, uint32_t *prim_nums, uint32_t *left_prims, uint32_t *right_prims, const std::array<std::unique_ptr<kdtree::BoundEdge[]>, 3> &edges, uint32_t right_mem_size, int depth, int bad_refines)
 {
+	if(render_control_ && render_control_->canceled()) return 0;
 	if(next_free_node_ == allocated_nodes_count_)
 	{
 		int new_count = 2 * allocated_nodes_count_;

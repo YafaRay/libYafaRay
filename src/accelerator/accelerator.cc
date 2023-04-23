@@ -40,15 +40,15 @@ ParamMap Accelerator::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<Accelerator>, ParamResult> Accelerator::factory(Logger &logger, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
+std::pair<std::unique_ptr<Accelerator>, ParamResult> Accelerator::factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
 	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
 	switch(type.value())
 	{
-		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, primitives_list, param_map);
-		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, primitives_list, param_map);
-		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, primitives_list, param_map);
+		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, render_control, primitives_list, param_map);
+		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, render_control, primitives_list, param_map);
+		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, render_control, primitives_list, param_map);
 		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
 }

@@ -111,6 +111,7 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, unsig
 	local_caustic_photons.reserve(n_caus_photons_thread);
 	while(!done)
 	{
+		if(render_control.canceled()) return;
 		const unsigned int haltoncurr = curr + n_caus_photons_thread * thread_id;
 		const float wavelength = sample::riS(haltoncurr);
 		const float s_1 = sample::riVdC(haltoncurr);
@@ -271,7 +272,7 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control)
 		if(getCausticMap()->nPhotons() > 0)
 		{
 			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			getCausticMap()->updateTree();
+			getCausticMap()->updateTree(render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}

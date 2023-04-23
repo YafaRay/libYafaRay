@@ -39,7 +39,7 @@ class NodeMaterial: public Material
 
 	protected:
 		/** parse node shaders to fill nodeList */
-		static void parseNodes(const ParamMap &params, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, Logger &logger);
+		static void parseNodes(Logger &logger, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, const ParamMap &param_map);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;
 		   sets reqNodeMem to the amount of memory the node node_tree_data requires for evaluation of all nodes */
 		void evalBump(NodeTreeData &node_tree_data, SurfacePoint &sp, const ShaderNode *bump_shader_node, const Camera *camera) const;

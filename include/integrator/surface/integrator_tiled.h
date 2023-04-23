@@ -46,20 +46,20 @@ class TiledIntegrator : public SurfaceIntegrator
 		inline static std::string getClassName() { return "TiledIntegrator"; }
 		TiledIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : SurfaceIntegrator{logger, param_result, name, param_map} { }
 		/*! Rendering prepasses to precalc suff in case needed */
-		virtual void prePass(ImageFilm *image_film, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
+		virtual void prePass(RenderControl &render_control, ImageFilm &image_film, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		bool render(ImageFilm *image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
+		bool render(RenderControl &render_control, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a pass; only required by the default implementation of render() */
-		bool renderPass(ImageFilm *image_film, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier);
-		virtual bool renderTile(ImageFilm *image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier);
-		void renderWorker(ImageFilm *image_film, ThreadControl *control, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier);
-		void precalcDepths(ImageFilm *image_film) const;
+		bool renderPass(RenderControl &render_control, ImageFilm &image_film, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier);
+		virtual bool renderTile(ImageFilm &image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderControl &render_control);
+		void renderWorker(ImageFilm &image_film, ThreadControl *control, std::vector<int> &correlative_sample_number, int thread_id, int samples, int offset, bool adaptive, int aa_pass, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderControl &render_control);
+		void precalcDepths(ImageFilm &image_film) const;
 		static void generateCommonLayers(ColorLayers *color_layers, const SurfacePoint &sp, const MaskParams &mask_params, unsigned int object_index_highest, unsigned int material_index_highest); //!< Generates render passes common to all integrators
 		static void generateOcclusionLayers(ColorLayers *color_layers, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, const SurfacePoint &sp, const Vec3f &wo, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
 		/*! Samples ambient occlusion for a given surface point */
 		static Rgb sampleAmbientOcclusion(const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const Camera *camera, const PixelSamplingData &pixel_sampling_data, bool transparent_shadows, bool clay, int ao_samples, bool shadow_bias_auto, float shadow_bias, float ao_dist, const Rgb &ao_col, int transp_shadows_depth);
-		static void applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray &ray, RandomGenerator &random_generator, const VolumeIntegrator *volume_integrator, bool transparent_background);
+		static void applyVolumetricEffects(Rgb &col, float &alpha, ColorLayers *color_layers, const Ray &ray, RandomGenerator &random_generator, const VolumeIntegrator &volume_integrator, bool transparent_background);
 		static std::pair<Rgb, float> background(const Ray &ray, ColorLayers *color_layers, bool transparent_background, bool transparent_refracted_background, const Background *background, int ray_level);
 };
 
