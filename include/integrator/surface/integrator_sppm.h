@@ -23,7 +23,6 @@
 #include "integrator_montecarlo.h"
 #include "photon/hashgrid.h"
 #include "sampler/halton.h"
-#include "render/renderer.h"
 
 namespace yafaray {
 

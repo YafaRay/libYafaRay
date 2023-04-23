@@ -54,8 +54,8 @@ std::string Badge::getRenderInfo(const RenderMonitor &render_monitor, const Rend
 	std::stringstream ss_badge;
 	ss_badge << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss_badge << std::setprecision(2);
-	double times = render_control.getTimerTimeNotStopping("rendert");
-	if(render_control.finished()) times = render_control.getTimerTime("rendert");
+	double times = render_monitor.getTimerTimeNotStopping("rendert");
+	if(render_control.finished()) times = render_monitor.getTimerTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_size_[Axis::X] << "x" << image_size_[Axis::Y];
@@ -73,8 +73,8 @@ std::string Badge::getRenderInfo(const RenderMonitor &render_monitor, const Rend
 	if(timem > 0) ss_badge << " " << timem << "m";
 	ss_badge << " " << times << "s";
 
-	times = render_control.getTimerTimeNotStopping("rendert") + render_control.getTimerTime("prepass");
-	if(render_control.finished()) times = render_control.getTimerTime("rendert") + render_control.getTimerTime("prepass");
+	times = render_monitor.getTimerTimeNotStopping("rendert") + render_monitor.getTimerTime("prepass");
+	if(render_control.finished()) times = render_monitor.getTimerTime("rendert") + render_monitor.getTimerTime("prepass");
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | Total time:";
 	if(timeh > 0) ss_badge << " " << timeh << "h";

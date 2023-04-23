@@ -28,6 +28,7 @@
 #include "param/param.h"
 #include "integrator/surface/integrator_surface.h"
 #include "render/imagefilm.h"
+#include "render/render_control.h"
 #include "render/render_monitor.h"
 #include <cstring>
 

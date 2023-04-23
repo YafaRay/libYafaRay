@@ -23,7 +23,6 @@
 
 #include "integrator_tiled.h"
 #include "color/color.h"
-#include "render/renderer.h"
 #include <map>
 #include <atomic>
 

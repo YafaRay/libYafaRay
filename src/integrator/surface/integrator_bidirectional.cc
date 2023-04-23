@@ -33,7 +33,6 @@
 #include "render/render_data.h"
 #include "accelerator/accelerator.h"
 #include "material/sample.h"
-#include "render/renderer.h"
 #include "integrator/volume/integrator_volume.h"
 #include "render/render_monitor.h"
 

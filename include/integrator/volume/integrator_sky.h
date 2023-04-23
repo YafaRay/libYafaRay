@@ -22,7 +22,6 @@
 
 #include <math/random.h>
 #include "integrator/volume/integrator_volume.h"
-#include "render/renderer.h"
 
 namespace yafaray {
 

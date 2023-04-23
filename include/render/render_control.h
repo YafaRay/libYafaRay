@@ -20,39 +20,30 @@
 #ifndef LIBYAFARAY_RENDER_CONTROL_H
 #define LIBYAFARAY_RENDER_CONTROL_H
 
-#include "common/timer.h"
-#include <string>
-#include <mutex>
-#include <memory>
+#include <atomic>
 
 namespace yafaray {
-
-class ProgressBar;
 
 class RenderControl final
 {
 	public:
-		void setStarted();
-		void setResumed();
-		void setFinished();
-		void setCanceled();
-		bool inProgress() const;
-		bool resumed() const;
-		bool finished() const;
-		bool canceled() const;
-		bool addTimerEvent(const std::string &event) { return timer_.addEvent(event); }
-		bool startTimer(const std::string &event) { return timer_.start(event); }
-		bool stopTimer(const std::string &event) { return timer_.stop(event); }
-		[[nodiscard]] double getTimerTime(const std::string &event) const { return timer_.getTime(event); }
-		[[nodiscard]] double getTimerTimeNotStopping(const std::string &event) const { return timer_.getTimeNotStopping(event); }
+		void setStarted() { flags_ = InProgress; }
+		void setResumed() { flags_ = InProgress | Resumed; }
+		void setFinished() { flags_ = Finished; }
+		void setCanceled() { flags_ = Canceled; }
+		bool inProgress() const { return flags_ & InProgress; }
+		bool resumed() const { return flags_ & Resumed; }
+		bool finished() const { return flags_ & Finished; }
+		bool canceled() const { return flags_ & Canceled; }
 
 	private:
-		bool render_in_progress_ = false;
-		bool render_finished_ = false;
-		bool render_resumed_ = false;
-		bool render_canceled_ = false;
-		Timer timer_;
-		std::mutex mutx_;
+		enum {
+			InProgress = 1 << 0,
+			Finished = 1 << 1,
+			Resumed = 1 << 2,
+			Canceled = 1 << 3,
+		};
+		std::atomic<unsigned char> flags_{0};
 };
 
 } //namespace yafaray

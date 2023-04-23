@@ -21,7 +21,7 @@
 #include "param/param.h"
 #include "geometry/clip_plane.h"
 #include "geometry/primitive/primitive.h"
-#include "image/image_output.h"
+#include "render/render_control.h"
 #include <thread>
 
 namespace yafaray {

@@ -130,14 +130,14 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 	logger_.logInfo(getName(), ": ", pass_string.str());
 	render_monitor.setProgressBarTag(pass_string.str());
 
-	render_control.addTimerEvent("rendert");
-	render_control.startTimer("rendert");
+	render_monitor.addTimerEvent("rendert");
+	render_monitor.startTimer("rendert");
 
 	image_film.resetImagesAutoSaveTimer();
-	render_control.addTimerEvent("imagesAutoSaveTimer");
+	render_monitor.addTimerEvent("imagesAutoSaveTimer");
 
 	image_film.resetFilmAutoSaveTimer();
-	render_control.addTimerEvent("filmAutoSaveTimer");
+	render_monitor.addTimerEvent("filmAutoSaveTimer");
 
 	image_film.init(render_control, render_monitor, *this);
 
@@ -180,11 +180,11 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 		acum_aa_samples += 1;
 		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
-	render_control.stopTimer("rendert");
-	render_control.stopTimer("imagesAutoSaveTimer");
-	render_control.stopTimer("filmAutoSaveTimer");
+	render_monitor.stopTimer("rendert");
+	render_monitor.stopTimer("imagesAutoSaveTimer");
+	render_monitor.stopTimer("filmAutoSaveTimer");
 	render_control.setFinished();
-	logger_.logInfo(getName(), ": Overall rendertime: ", render_control.getTimerTime("rendert"), "s.");
+	logger_.logInfo(getName(), ": Overall rendertime: ", render_monitor.getTimerTime("rendert"), "s.");
 
 	// Integrator Settings for "drawRenderSettings()" in imageFilm, SPPM has own render method, so "getSettings()"
 	// in integrator.h has no effect and Integrator settings won't be printed to the parameter badge.
@@ -504,8 +504,8 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, RenderMonitor &
 void SppmIntegrator::prePass(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, int samples, int offset, bool adaptive)
 {
 	if(getLights().empty()) return;
-	render_control.addTimerEvent("prepass");
-	render_control.startTimer("prepass");
+	render_monitor.addTimerEvent("prepass");
+	render_monitor.startTimer("prepass");
 
 	logger_.logInfo(getName(), ": Starting Photon tracing pass...");
 
@@ -597,12 +597,12 @@ void SppmIntegrator::prePass(RenderControl &render_control, RenderMonitor &rende
 		}
 	}
 
-	render_control.stopTimer("prepass");
+	render_monitor.stopTimer("prepass");
 
 	if(b_hashgrid_)
-		logger_.logInfo(getName(), ": PhotonGrid building time: ", render_control.getTimerTime("prepass"));
+		logger_.logInfo(getName(), ": PhotonGrid building time: ", render_monitor.getTimerTime("prepass"));
 	else
-		logger_.logInfo(getName(), ": PhotonMap building time: ", render_control.getTimerTime("prepass"));
+		logger_.logInfo(getName(), ": PhotonMap building time: ", render_monitor.getTimerTime("prepass"));
 
 	render_monitor.setProgressBarTag(previous_progress_tag);
 	render_monitor.initProgressBar(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());

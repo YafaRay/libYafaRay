@@ -57,8 +57,8 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMoni
 	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
 	std::stringstream set;
 
-	render_control.addTimerEvent("prepass");
-	render_control.startTimer("prepass");
+	render_monitor.addTimerEvent("prepass");
+	render_monitor.startTimer("prepass");
 
 	set << "Direct Light  ";
 
@@ -79,10 +79,10 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMoni
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 	}
 
-	render_control.stopTimer("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), render_control.getTimerTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
+	render_monitor.stopTimer("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), render_monitor.getTimerTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_monitor.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
 	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 

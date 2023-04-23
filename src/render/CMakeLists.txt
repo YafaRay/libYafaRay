@@ -21,6 +21,5 @@ target_sources(libyafaray4
 		imagefilm.cc
 		imagesplitter.cc
 		progress_bar.cc
-		render_control.cc
 		render_monitor.cc
 )

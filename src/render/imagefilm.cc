@@ -22,7 +22,6 @@
 
 #include "render/imagefilm.h"
 #include "common/logger.h"
-#include "image/image_output.h"
 #include "format/format.h"
 #include "scene/scene.h"
 #include "camera/camera.h"
@@ -34,8 +33,8 @@
 #include "common/version_build_info.h"
 #include "image/image_manipulation.h"
 #include "integrator/surface/integrator_surface.h"
-#include "render/progress_bar.h"
 #include "render/render_monitor.h"
+#include "image/image_output.h"
 
 namespace yafaray {
 
@@ -128,7 +127,7 @@ std::pair<std::unique_ptr<ImageFilm>, ParamResult> ImageFilm::factory(Logger &lo
 	return {std::move(result), param_result};
 }
 
-ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, name_{name}, logger_{logger}
+ImageFilm::ImageFilm(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : params_{param_result, param_map}, name_{name}, outputs_{std::make_unique<Items<ImageOutput>>()}, logger_{logger}
 {
 	if(logger_.isDebug()) logger_.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.images_autosave_interval_type_ == AutoSaveParams::IntervalType::Pass) logger_.logInfo(getClassName(), ": ", "AutoSave partially rendered image every ", params_.images_autosave_interval_passes_, " passes");
@@ -227,10 +226,10 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 	exported_image_layers_.clear();
 	initLayersImages();
 	//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
-	if(!outputs_.empty())
+	if(!outputs_->empty())
 	{
 		initLayersExportedImages();
-		for(auto &output : outputs_)
+		for(auto &output : *outputs_)
 		{
 			output.item_->init(getSize(), getExportedImageLayers(), getName());
 		}
@@ -262,10 +261,10 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 	resetImagesAutoSaveTimer();
 	resetFilmAutoSaveTimer();
 
-	render_control.addTimerEvent("imagesAutoSaveTimer");
-	render_control.addTimerEvent("filmAutoSaveTimer");
-	render_control.startTimer("imagesAutoSaveTimer");
-	render_control.startTimer("filmAutoSaveTimer");
+	render_monitor.addTimerEvent("imagesAutoSaveTimer");
+	render_monitor.addTimerEvent("filmAutoSaveTimer");
+	render_monitor.startTimer("imagesAutoSaveTimer");
+	render_monitor.startTimer("filmAutoSaveTimer");
 
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control, render_monitor);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
 	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(render_control, render_monitor); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
@@ -320,7 +319,7 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 	{
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (images_auto_save_params_.pass_counter_ >= images_auto_save_params_.interval_passes_))
 		{
-			for(auto &output : outputs_)
+			for(auto &output : *outputs_)
 			{
 				if(output.item_) flush(render_control, render_monitor, All);
 			}
@@ -577,15 +576,15 @@ void ImageFilm::finishArea(RenderControl &render_control, RenderMonitor &render_
 
 	if(render_control.inProgress())
 	{
-		render_control.stopTimer("imagesAutoSaveTimer");
-		images_auto_save_params_.timer_ += render_control.getTimerTime("imagesAutoSaveTimer");
+		render_monitor.stopTimer("imagesAutoSaveTimer");
+		images_auto_save_params_.timer_ += render_monitor.getTimerTime("imagesAutoSaveTimer");
 		if(images_auto_save_params_.timer_ < 0.f) resetImagesAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		render_control.startTimer("imagesAutoSaveTimer");
+		render_monitor.startTimer("imagesAutoSaveTimer");
 
-		render_control.stopTimer("filmAutoSaveTimer");
-		film_load_save_.auto_save_.timer_ += render_control.getTimerTime("filmAutoSaveTimer");
+		render_monitor.stopTimer("filmAutoSaveTimer");
+		film_load_save_.auto_save_.timer_ += render_monitor.getTimerTime("filmAutoSaveTimer");
 		if(film_load_save_.auto_save_.timer_ < 0.f) resetFilmAutoSaveTimer(); //to solve some strange very negative value when using yafaray-xml, race condition somewhere?
-		render_control.startTimer("filmAutoSaveTimer");
+		render_monitor.startTimer("filmAutoSaveTimer");
 
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
@@ -667,7 +666,7 @@ void ImageFilm::flush(RenderControl &render_control, RenderMonitor &render_monit
 		logger_.logParams("--------------------------------------------------------------------------------");
 	}
 
-	for(auto &output : outputs_)
+	for(auto &output : *outputs_)
 	{
 		if(output.item_)
 		{
@@ -696,8 +695,8 @@ void ImageFilm::flush(RenderControl &render_control, RenderMonitor &render_monit
 			imageFilmSave(render_control, render_monitor);
 		}
 
-		render_control.stopTimer("imagesAutoSaveTimer");
-		render_control.stopTimer("filmAutoSaveTimer");
+		render_monitor.stopTimer("imagesAutoSaveTimer");
+		render_monitor.stopTimer("filmAutoSaveTimer");
 
 		logger_.clearMemoryLog();
 		if(logger_.isVerbose()) logger_.logVerbose("imageFilm: Done.");
@@ -926,7 +925,7 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	file.read<int>(loaded_image_num_layers);
 	initLayersImages();
 	//If there are any ImageOutputs, creation of the image buffers for the image outputs exported images
-	if(!outputs_.empty()) initLayersExportedImages();
+	if(!outputs_->empty()) initLayersExportedImages();
 	const int num_layers = film_image_layers_.size();
 	if(loaded_image_num_layers != num_layers)
 	{
@@ -1148,8 +1147,8 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
 	ss << std::setprecision(2);
 
-	double times = render_control.getTimerTimeNotStopping("rendert");
-	if(render_control.finished()) times = render_control.getTimerTime("rendert");
+	double times = render_monitor.getTimerTimeNotStopping("rendert");
+	if(render_control.finished()) times = render_monitor.getTimerTime("rendert");
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | " << size[Axis::X] << "x" << size[Axis::Y];
@@ -1167,8 +1166,8 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	if(timem > 0) ss << " " << timem << "m";
 	ss << " " << times << "s";
 
-	times = render_control.getTimerTimeNotStopping("rendert") + render_control.getTimerTime("prepass");
-	if(render_control.finished()) times = render_control.getTimerTime("rendert") + render_control.getTimerTime("prepass");
+	times = render_monitor.getTimerTimeNotStopping("rendert") + render_monitor.getTimerTime("prepass");
+	if(render_control.finished()) times = render_monitor.getTimerTime("rendert") + render_monitor.getTimerTime("prepass");
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | Total time:";
 	if(timeh > 0) ss << " " << timeh << "h";
@@ -1348,18 +1347,18 @@ void ImageFilm::setRenderHighlightAreaCallback(yafaray_FilmHighlightAreaCallback
 
 void ImageFilm::clearOutputs()
 {
-	outputs_.clear();
+	outputs_->clear();
 }
 
 bool ImageFilm::disableOutput(const std::string &name)
 {
-	const auto result{outputs_.disable(name)};
+	const auto result{outputs_->disable(name)};
 	return result.isOk();
 }
 
 std::pair<size_t, ParamResult> ImageFilm::createOutput(const std::string &name, const ParamMap &param_map)
 {
-	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, outputs_, name, param_map, *this)};
+	auto result{Items<ImageOutput>::createItem<ImageFilm>(logger_, *outputs_, name, param_map, *this)};
 	return result;
 }
 

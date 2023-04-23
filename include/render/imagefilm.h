@@ -36,7 +36,6 @@
 #include "image/image_layers.h"
 #include "common/timer.h"
 #include "geometry/rect.h"
-#include "renderer.h"
 #include <mutex>
 #include <atomic>
 #include <utility>
@@ -49,6 +48,8 @@ class ColorLayers;
 class RenderControl;
 class Timer;
 struct EdgeToonParams;
+class SurfaceIntegrator;
+class Camera;
 template <typename T> class Items;
 
 /*!	This class recieves all rendered image samples.
@@ -255,7 +256,7 @@ class ImageFilm final
 		float filter_table_scale_;
 
 		std::unique_ptr<Camera> camera_;
-		Items<ImageOutput> outputs_;
+		std::unique_ptr<Items<ImageOutput>> outputs_;
 		yafaray_FilmNotifyLayerCallback notify_layer_callback_ = nullptr;
 		void *notify_layer_callback_data_ = nullptr;
 		yafaray_FilmPutPixelCallback put_pixel_callback_ = nullptr;

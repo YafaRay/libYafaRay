@@ -27,7 +27,6 @@
 #include "common/enum_map.h"
 #include "param/class_meta.h"
 #include "common/items.h"
-#include "render/renderer.h"
 #include <map>
 #include <memory>
 
@@ -42,6 +41,7 @@ class Scene;
 class ImageFilm;
 class Accelerator;
 class FastRandom;
+class SurfaceIntegrator;
 
 class VolumeIntegrator
 {

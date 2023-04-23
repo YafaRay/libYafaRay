@@ -290,8 +290,8 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 
 	std::stringstream set;
 
-	render_control.addTimerEvent("prepass");
-	render_control.startTimer("prepass");
+	render_monitor.addTimerEvent("prepass");
+	render_monitor.startTimer("prepass");
 
 	logger_.logInfo(getName(), ": Starting preprocess...");
 
@@ -527,10 +527,10 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Caustic photon map: done.");
 	}
 
-	render_control.stopTimer("prepass");
-	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), render_control.getTimerTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
+	render_monitor.stopTimer("prepass");
+	logger_.logInfo(getName(), ": Photonmap building time: ", std::fixed, std::setprecision(1), render_monitor.getTimerTime("prepass"), "s", " (", num_threads_photons_, " thread(s))");
 
-	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
+	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_monitor.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
 	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 

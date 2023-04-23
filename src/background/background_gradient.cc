@@ -22,7 +22,6 @@
 #include "param/param.h"
 #include "scene/scene.h"
 #include "light/light.h"
-#include "image/image_output.h"
 #include "geometry/vector.h"
 
 namespace yafaray {

@@ -21,7 +21,6 @@
 #define LIBYAFARAY_INTEGRATOR_PATH_TRACER_H
 
 #include "integrator_photon_caustic.h"
-#include "render/renderer.h"
 
 namespace yafaray {
 

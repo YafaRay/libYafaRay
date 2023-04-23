@@ -23,7 +23,6 @@
 #include "scene/scene.h"
 #include "common/items.h"
 #include "light/light.h"
-#include "image/image_output.h"
 
 namespace yafaray {
 

@@ -35,7 +35,6 @@
 #include "sampler/sample.h"
 #include "color/color_layers.h"
 #include "render/render_data.h"
-#include "image/image_output.h"
 #include "accelerator/accelerator.h"
 #include "photon/photon.h"
 #include "param/param.h"
@@ -140,8 +139,8 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 	logger_.logInfo(pass_string.str());
 	render_monitor.setProgressBarTag(pass_string.str());
 
-	render_control.addTimerEvent("rendert");
-	render_control.startTimer("rendert");
+	render_monitor.addTimerEvent("rendert");
+	render_monitor.startTimer("rendert");
 
 	image_film.init(render_control, render_monitor, *this);
 
@@ -213,9 +212,9 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 			if(aa_noise_params_.threshold_ > 0.f) aa_threshold_changed = true;
 		}
 	}
-	render_control.stopTimer("rendert");
+	render_monitor.stopTimer("rendert");
 	render_control.setFinished();
-	logger_.logInfo(getName(), ": Overall rendertime: ", render_control.getTimerTime("rendert"), "s");
+	logger_.logInfo(getName(), ": Overall rendertime: ", render_monitor.getTimerTime("rendert"), "s");
 
 	return true;
 }

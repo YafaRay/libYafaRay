@@ -25,7 +25,6 @@
 #include "geometry/matrix.h"
 #include "render/imagefilm.h"
 #include "param/param.h"
-#include "image/image_output.h"
 #if defined(_WIN32)
 #include <windows.h>
 #endif

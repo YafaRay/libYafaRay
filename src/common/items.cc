@@ -20,13 +20,12 @@
 #include "material/material.h"
 #include "geometry/object/object.h"
 #include "texture/texture.h"
-#include "image/image_output.h"
 #include "camera/camera.h"
 #include "light/light.h"
 #include "volume/region/volume_region.h"
 #include "render/imagefilm.h"
-#include "render/renderer.h"
 #include "scene/scene.h"
+#include "image/image_output.h"
 
 namespace yafaray {
 
@@ -171,7 +170,6 @@ template class Items<ImageOutput>;
 template class Items<VolumeRegion>;
 template class Items<Image>;
 template std::pair<size_t, ParamResult> Items<ImageOutput>::createItem<ImageFilm>(Logger &logger, Items<ImageOutput> &map, const std::string &name, const ParamMap &param_map, const ImageFilm &items_container);
-template std::pair<size_t, ParamResult> Items<Camera>::createItem<Renderer>(Logger &logger, Items<Camera> &map, const std::string &name, const ParamMap &param_map, const Renderer &items_container);
 template std::pair<size_t, ParamResult> Items<Light>::createItem<Scene>(Logger &logger, Items<Light> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
 template std::pair<size_t, ParamResult> Items<Texture>::createItem<Scene>(Logger &logger, Items<Texture> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
 template std::pair<size_t, ParamResult> Items<VolumeRegion>::createItem<Scene>(Logger &logger, Items<VolumeRegion> &map, const std::string &name, const ParamMap &param_map, const Scene &items_container);
