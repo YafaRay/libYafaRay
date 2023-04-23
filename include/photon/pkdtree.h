@@ -79,7 +79,7 @@ class PointKdTree
 {
 	public:
 		PointKdTree() = default;
-		PointKdTree(Logger &logger, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
+		PointKdTree(Logger &logger, const RenderMonitor &render_monitor, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads = 1);
 		~PointKdTree() { if(nodes_) free(nodes_); }
 		template<typename LookupProc> void lookup(const Point3f &p, LookupProc &proc, float &max_dist_squared) const;
 	protected:
@@ -102,7 +102,7 @@ class PointKdTree
 };
 
 template<typename T>
-PointKdTree<T>::PointKdTree(Logger &logger, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads) : render_control_{render_control}
+PointKdTree<T>::PointKdTree(Logger &logger, const RenderMonitor &render_monitor, const RenderControl &render_control, const std::vector<T> &dat, const std::string &map_name, int num_threads) : render_control_{render_control}
 {
 	next_free_node_ = 0;
 	n_elements_ = dat.size();

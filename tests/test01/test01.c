@@ -32,6 +32,7 @@ int main()
 	yafaray_Scene *scene = NULL;
 	yafaray_Film *film = NULL;
 	yafaray_RenderControl *render_control = NULL;
+	yafaray_RenderMonitor *render_monitor = NULL;
 	size_t material_id = 0;
 	size_t object_id = 0;
 	size_t image_id = 0;
@@ -498,11 +499,13 @@ int main()
 	yafaray_createOutput(film, "output1_tga", param_map);
 
 	/* Rendering */
-	render_control = yafaray_createRenderControl(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
-	yafaray_preprocessScene(render_control, scene);
-	yafaray_preprocessSurfaceIntegrator(render_control, surface_integrator, scene);
-	yafaray_render(render_control, surface_integrator, film, scene);
+	render_monitor = yafaray_createRenderMonitor(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	render_control = yafaray_createRenderControl();
+	yafaray_preprocessScene(render_control, scene, render_monitor);
+	yafaray_preprocessSurfaceIntegrator(render_control, render_monitor, surface_integrator, scene);
+	yafaray_render(render_control, render_monitor, surface_integrator, film, scene);
 	yafaray_destroyRenderControl(render_control);
+	yafaray_destroyRenderMonitor(render_monitor);
 
 	/* Destruction/deallocation */
 	yafaray_destroyFilm(film);

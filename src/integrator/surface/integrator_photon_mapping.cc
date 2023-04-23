@@ -35,6 +35,7 @@
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
 #include "integrator/volume/integrator_volume.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -94,7 +95,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::fac
 	return {std::move(integrator), param_result};
 }
 
-void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherData *gdata, float ds_rad, int n_search)
+void PhotonIntegrator::preGatherWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData *gdata, float ds_rad, int n_search)
 {
 	const float ds_radius_2 = ds_rad * ds_rad;
 	gdata->lock();
@@ -139,7 +140,7 @@ void PhotonIntegrator::preGatherWorker(RenderControl &render_control, PreGatherD
 		gdata->lock();
 		start = gdata->fetched_;
 		end = gdata->fetched_ = std::min(total, start + 32);
-		render_control.updateProgressBar(32);
+		render_monitor.updateProgressBar(32);
 		gdata->unlock();
 	}
 }
@@ -153,7 +154,7 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, ParamResult &param_result, co
 	getRadianceMap()->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(RenderControl &render_control, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
+void PhotonIntegrator::diffuseWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -264,7 +265,7 @@ void PhotonIntegrator::diffuseWorker(RenderControl &render_control, PreGatherDat
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			render_control.updateProgressBar();
+			render_monitor.updateProgressBar();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_diffuse_photons_thread);
@@ -278,14 +279,14 @@ void PhotonIntegrator::diffuseWorker(RenderControl &render_control, PreGatherDat
 	pgdat.unlock();
 }
 
-void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map, const RenderControl &render_control)
+void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map, const RenderMonitor &render_monitor, const RenderControl &render_control)
 {
-	photon_map->updateTree(render_control);
+	photon_map->updateTree(render_monitor, render_control);
 }
 
-bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
+bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
 
 	std::stringstream set;
 
@@ -361,19 +362,19 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		//shoot photons
 		curr = 0;
 		logger_.logInfo(getName(), ": Building diffuse photon map...");
-		render_control.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
+		render_monitor.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1, photons_diffuse_ / 128);
-		render_control.setProgressBarTag("Building diffuse photon map...");
+		render_monitor.setProgressBarTag("Building diffuse photon map...");
 		//Pregather diffuse photons
 		photons_diffuse_ = std::max(num_threads_photons_, (photons_diffuse_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 		logger_.logParams(getName(), ": Shooting ", photons_diffuse_, " photons across ", num_threads_photons_, " threads (", (photons_diffuse_ / num_threads_photons_), " photons/thread)");
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(render_control), std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
 		for(auto &t : threads) t.join();
 
-		render_control.setProgressBarAsDone();
-		render_control.setProgressBarTag("Diffuse photon map built.");
+		render_monitor.setProgressBarAsDone();
+		render_monitor.setProgressBarTag("Diffuse photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Diffuse photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights_diffuse, " light(s)");
 
@@ -397,14 +398,14 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		if(num_threads_photons_ >= 2)
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			render_control.setProgressBarTag("Building diffuse photons kd-tree...");
-			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get(), std::ref(render_control));
+			render_monitor.setProgressBarTag("Building diffuse photons kd-tree...");
+			diffuse_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, diffuse_map_.get(), std::ref(render_monitor), std::ref(render_control));
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			render_control.setProgressBarTag("Building diffuse photons kd-tree...");
-			getDiffuseMap()->updateTree(render_control);
+			render_monitor.setProgressBarTag("Building diffuse photons kd-tree...");
+			getDiffuseMap()->updateTree(render_monitor, render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
@@ -437,9 +438,9 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
-		render_control.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
+		render_monitor.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1, n_caus_photons_ / 128);
-		render_control.setProgressBarTag("Building caustics photon map...");
+		render_monitor.setProgressBarTag("Building caustics photon map...");
 		//Pregather caustic photons
 
 		n_caus_photons_ = std::max(num_threads_photons_, (n_caus_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
@@ -448,11 +449,11 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
-		render_control.setProgressBarAsDone();
-		render_control.setProgressBarTag("Caustics photon map built.");
+		render_monitor.setProgressBarAsDone();
+		render_monitor.setProgressBarTag("Caustics photon map built.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", getCausticMap()->nPhotons());
 	}
@@ -467,14 +468,14 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		if(num_threads_photons_ >= 2)
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get(), std::ref(render_control));
+			render_monitor.setProgressBarTag("Building caustic photons kd-tree...");
+			caustic_map_build_kd_tree_thread = std::thread(&PhotonIntegrator::photonMapKdTreeWorker, caustic_map_.get(), std::ref(render_monitor), std::ref(render_control));
 		}
 		else
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			getCausticMap()->updateTree(render_control);
+			render_monitor.setProgressBarTag("Building caustic photons kd-tree...");
+			getCausticMap()->updateTree(render_monitor, render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}
@@ -488,7 +489,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 	if(use_photon_diffuse_ && params_.final_gather_) //create radiance map:
 	{
 		// == remove too close radiance points ==//
-		auto r_tree = std::make_unique<kdtree::PointKdTree<RadData>>(logger_, render_control, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_);
+		auto r_tree = std::make_unique<kdtree::PointKdTree<RadData>>(logger_, render_monitor, render_control, pgdat.rad_points_, "FG Radiance Photon Map", num_threads_photons_);
 		std::vector< RadData > cleaned;
 		for(const auto &rad_point : pgdat.rad_points_)
 		{
@@ -504,19 +505,19 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 		// ================ //
 		int n_threads = num_threads_;
 		pgdat.radiance_vec_.resize(pgdat.rad_points_.size());
-		render_control.initProgressBar(pgdat.rad_points_.size(), logger_.getConsoleLogColorsEnabled());
-		render_control.setProgressBarTag("Pregathering radiance data for final gathering...");
+		render_monitor.initProgressBar(pgdat.rad_points_.size(), logger_.getConsoleLogColorsEnabled());
+		render_monitor.setProgressBarTag("Pregathering radiance data for final gathering...");
 
 		std::vector<std::thread> threads;
 		threads.reserve(n_threads);
-		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, std::ref(render_control), &pgdat, params_.diffuse_radius_, params_.num_photons_diffuse_search_);
+		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, std::ref(render_control), std::ref(render_monitor), &pgdat, params_.diffuse_radius_, params_.num_photons_diffuse_search_);
 		for(auto &t : threads) t.join();
 
 		getRadianceMap()->swapVector(pgdat.radiance_vec_);
-		render_control.setProgressBarAsDone();
-		render_control.setProgressBarTag("Pregathering radiance data done...");
+		render_monitor.setProgressBarAsDone();
+		render_monitor.setProgressBarTag("Pregathering radiance data done...");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Radiance tree built... Updating the tree...");
-		getRadianceMap()->updateTree(render_control);
+		getRadianceMap()->updateTree(render_monitor, render_control);
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 	}
 
@@ -531,7 +532,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, const Scene &sc
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 
 	if(logger_.isVerbose())
 	{

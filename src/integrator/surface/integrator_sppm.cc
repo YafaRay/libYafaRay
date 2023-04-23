@@ -34,6 +34,7 @@
 #include "volume/handler/volume_handler.h"
 #include "integrator/volume/integrator_volume.h"
 #include "common/sysinfo.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -95,15 +96,15 @@ SppmIntegrator::SppmIntegrator(Logger &logger, ParamResult &param_result, const 
 	getDiffuseMap()->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
+bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
 	aa_settings << " passes=" << params_.num_passes_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
 	aa_settings << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
-	render_control.setAaNoiseInfo(render_control.getAaNoiseInfo() + aa_settings.str());
+	render_monitor.setAaNoiseInfo(render_monitor.getAaNoiseInfo() + aa_settings.str());
 
-	render_control.setTotalPasses(params_.num_passes_);	//passNum is total number of passes in SPPM
+	render_monitor.setTotalPasses(params_.num_passes_);	//passNum is total number of passes in SPPM
 
 	float aa_light_sample_multiplier = 1.f;
 	float aa_indirect_sample_multiplier = 1.f;
@@ -121,13 +122,13 @@ bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film
 	}
 	set << "RayDepth=" << MonteCarloIntegrator::params_.r_depth_ << "  ";
 
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 	if(logger_.isVerbose()) logger_.logVerbose(set.str());
 
 
 	pass_string << "Rendering pass 1 of " << std::max(1, params_.num_passes_) << "...";
 	logger_.logInfo(getName(), ": ", pass_string.str());
-	render_control.setProgressBarTag(pass_string.str());
+	render_monitor.setProgressBarTag(pass_string.str());
 
 	render_control.addTimerEvent("rendert");
 	render_control.startTimer("rendert");
@@ -138,13 +139,13 @@ bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film
 	image_film.resetFilmAutoSaveTimer();
 	render_control.addTimerEvent("filmAutoSaveTimer");
 
-	image_film.init(render_control, *this);
+	image_film.init(render_control, render_monitor, *this);
 
 	if(render_control.resumed())
 	{
 		pass_string.clear();
 		pass_string << "Loading film file, skipping pass 1...";
-		render_control.setProgressBarTag(pass_string.str());
+		render_monitor.setProgressBarTag(pass_string.str());
 	}
 
 	logger_.logInfo(getName(), ": ", pass_string.str());
@@ -157,10 +158,10 @@ bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film
 	if(render_control.resumed())
 	{
 		acum_aa_samples = image_film.getSamplingOffset();
-		renderPass(render_control, image_film, correlative_sample_number, 0, acum_aa_samples, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(render_control, render_monitor, image_film, correlative_sample_number, 0, acum_aa_samples, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 	}
 	else
-		renderPass(render_control, image_film, correlative_sample_number, 1, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(render_control, render_monitor, image_film, correlative_sample_number, 1, 0, false, 0, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 	std::string initial_estimate = "no";
 	if(pm_ire_) initial_estimate = "yes";
@@ -173,9 +174,9 @@ bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film
 	{
 		if(render_control.canceled()) break;
 		pass_info = i + 1;
-		image_film.nextPass(render_control, false, getName(), edge_toon_params_);
+		image_film.nextPass(render_control, render_monitor, false, getName(), edge_toon_params_);
 		n_refined_ = 0;
-		renderPass(render_control, image_film, correlative_sample_number, 1, acum_aa_samples, false, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier); // offset are only related to the passNum, since we alway have only one sample.
+		renderPass(render_control, render_monitor, image_film, correlative_sample_number, 1, acum_aa_samples, false, i, object_index_highest, material_index_highest, aa_light_sample_multiplier, aa_indirect_sample_multiplier); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
 		logger_.logInfo(getName(), ": This pass refined ", n_refined_, " of ", hp_num, " pixels.");
 	}
@@ -194,14 +195,14 @@ bool SppmIntegrator::render(RenderControl &render_control, ImageFilm &image_film
 
 	set << "\nPhotons=" << n_photons_ << " search=" << params_.search_num_ << " radius=" << params_.photon_radius_ << "(init.estim=" << initial_estimate << ") total photons=" << totaln_photons_ << "  ";
 
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 	if(logger_.isVerbose()) logger_.logVerbose(set.str());
 
 	return true;
 }
 
 
-bool SppmIntegrator::renderTile(ImageFilm &image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderControl &render_control)
+bool SppmIntegrator::renderTile(ImageFilm &image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderMonitor &render_monitor, const RenderControl &render_control)
 {
 	const int camera_res_x = image_film.getCamera()->resX();
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
@@ -346,7 +347,7 @@ bool SppmIntegrator::renderTile(ImageFilm &image_film, std::vector<int> &correla
 	return true;
 }
 
-void SppmIntegrator::photonWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
+void SppmIntegrator::photonWorker(RenderControl &render_control, RenderMonitor &render_monitor, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -484,7 +485,7 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, unsigned int &t
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			render_control.updateProgressBar();
+			render_monitor.updateProgressBar();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_photons_thread);
@@ -500,7 +501,7 @@ void SppmIntegrator::photonWorker(RenderControl &render_control, unsigned int &t
 
 
 //photon pass, scatter photon
-void SppmIntegrator::prePass(RenderControl &render_control, ImageFilm &image_film, int samples, int offset, bool adaptive)
+void SppmIntegrator::prePass(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, int samples, int offset, bool adaptive)
 {
 	if(getLights().empty()) return;
 	render_control.addTimerEvent("prepass");
@@ -542,14 +543,14 @@ void SppmIntegrator::prePass(RenderControl &render_control, ImageFilm &image_fil
 	//shoot photons
 	unsigned int curr = 0;
 	RandomGenerator random_generator(rand() + offset * (4517) + 123);
-	std::string previous_progress_tag = render_control.getProgressBarTag();
-	int previous_progress_total_steps = render_control.getProgressBarTotalSteps();
+	std::string previous_progress_tag = render_monitor.getProgressBarTag();
+	int previous_progress_total_steps = render_monitor.getProgressBarTotalSteps();
 
 	if(b_hashgrid_) logger_.logInfo(getName(), ": Building photon hashgrid...");
 	else logger_.logInfo(getName(), ": Building photon map...");
-	render_control.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
+	render_monitor.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 	const int pb_step = std::max(1, n_photons_ / 128);
-	render_control.setProgressBarTag(previous_progress_tag + " - building photon map...");
+	render_monitor.setProgressBarTag(previous_progress_tag + " - building photon map...");
 
 	n_photons_ = std::max(num_threads_photons_, (n_photons_ / num_threads_photons_) * num_threads_photons_); //rounding the number of diffuse photons so it's a number divisible by the number of threads (distribute uniformly among the threads). At least 1 photon per thread
 
@@ -557,11 +558,11 @@ void SppmIntegrator::prePass(RenderControl &render_control, ImageFilm &image_fil
 
 	std::vector<std::thread> threads;
 	threads.reserve(num_threads_photons_);
-	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(render_control), std::ref(curr), i, num_lights, light_power_d.get(), getLights(), pb_step);
+	for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&SppmIntegrator::photonWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(curr), i, num_lights, light_power_d.get(), getLights(), pb_step);
 	for(auto &t : threads) t.join();
 
-	render_control.setProgressBarAsDone();
-	render_control.setProgressBarTag(previous_progress_tag + " - photon map built.");
+	render_monitor.setProgressBarAsDone();
+	render_monitor.setProgressBarTag(previous_progress_tag + " - photon map built.");
 	if(logger_.isVerbose()) logger_.logVerbose(getName(), ":Photon map built.");
 	logger_.logInfo(getName(), ": Shot ", curr, " photons from ", num_lights, " light(s)");
 
@@ -580,13 +581,13 @@ void SppmIntegrator::prePass(RenderControl &render_control, ImageFilm &image_fil
 		if(getDiffuseMap()->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building diffuse photons kd-tree:");
-			getDiffuseMap()->updateTree(render_control);
+			getDiffuseMap()->updateTree(render_monitor, render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 		if(getCausticMap()->nPhotons() > 0)
 		{
 			logger_.logInfo(getName(), ": Building caustic photons kd-tree:");
-			getCausticMap()->updateTree(render_control);
+			getCausticMap()->updateTree(render_monitor, render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 		if(getDiffuseMap()->nPhotons() < 50)
@@ -603,8 +604,8 @@ void SppmIntegrator::prePass(RenderControl &render_control, ImageFilm &image_fil
 	else
 		logger_.logInfo(getName(), ": PhotonMap building time: ", render_control.getTimerTime("prepass"));
 
-	render_control.setProgressBarTag(previous_progress_tag);
-	render_control.initProgressBar(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
+	render_monitor.setProgressBarTag(previous_progress_tag);
+	render_monitor.initProgressBar(previous_progress_total_steps, logger_.getConsoleLogColorsEnabled());
 }
 
 //now it's a dummy function

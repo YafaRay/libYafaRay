@@ -85,17 +85,17 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
 			PARAM_DECL(int, threads_photons_, -1, "threads_photons", "Number of threads for photon mapping, -1 = auto detection");
 		} params_;
-		bool render(RenderControl &render_control, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
 		/*! render a tile; only required by default implementation of render() */
-		bool renderTile(ImageFilm &image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderControl &render_control) override;
+		bool renderTile(ImageFilm &image_film, std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderMonitor &render_monitor, const RenderControl &render_control) override;
 		std::pair<Rgb, float> integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) override;
-		void prePass(RenderControl &render_control, ImageFilm &image_film, int samples, int offset, bool adaptive) override;
+		void prePass(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, int samples, int offset, bool adaptive) override;
 		/*! not used now, use traceGatherRay instead*/
 		/*! initializing the things that PPM uses such as initial radius */
 		void initializePpm(const ImageFilm &image_film);
 		/*! based on integrate method to do the gatering trace, need double-check deadly. */
 		GatherInfo traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerator &random_generator, ColorLayers *color_layers, int thread_id, int ray_level, const Camera *camera, bool chromatic_enabled, float aa_light_sample_multiplier, float wavelength, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest);
-		void photonWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
+		void photonWorker(RenderControl &render_control, RenderMonitor &render_monitor, unsigned int &total_photons_shot, int thread_id, int num_d_lights, const Pdf1D *light_power_d, const std::vector<const Light *> &tmplights, int pb_step);
 		[[nodiscard]] int setNumThreadsPhotons(int threads_photons);
 		PhotonMap *getCausticMap() { return caustic_map_.get(); }
 		const PhotonMap *getCausticMap() const { return caustic_map_.get(); }

@@ -66,20 +66,20 @@ class ImageFilm final
 		std::string getName() const { return name_; }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
-		void init(RenderControl &render_control, const SurfaceIntegrator &surface_integrator);
-		bool render(RenderControl &render_control, SurfaceIntegrator &surface_integrator, const Scene &scene);
+		void init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator);
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator, const Scene &scene);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
+		int nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
 		bool nextArea(RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params);
+		void finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a, const EdgeToonParams &edge_params);
 		/*! Output all pixels to the color output */
-		void flush(RenderControl &render_control, Flags flags);
+		void flush(RenderControl &render_control, RenderMonitor &render_monitor, Flags flags);
 		/*! query if sample (x,y) was flagged to need more samples.
 			IMPORTANT! You may only call this after you have called nextPass(true, ...), otherwise
 			no such flags have been created !! */
@@ -207,10 +207,10 @@ class ImageFilm final
 
 		std::string getFilmPath() const;
 		bool imageFilmLoad(const std::string &filename);
-		void imageFilmLoadAllInFolder(RenderControl &render_control);
-		bool imageFilmSave(RenderControl &render_control);
-		void imageFilmFileBackup(RenderControl &render_control);
-		static std::string printRenderStats(const RenderControl &render_control, const Size2i &size);
+		void imageFilmLoadAllInFolder(RenderControl &render_control, RenderMonitor &render_monitor);
+		bool imageFilmSave(RenderControl &render_control, RenderMonitor &render_monitor);
+		void imageFilmFileBackup(RenderControl &render_control, RenderMonitor &render_monitor);
+		static std::string printRenderStats(const RenderControl &render_control, const RenderMonitor &render_monitor, const Size2i &size);
 		static float darkThresholdCurveInterpolate(float pixel_brightness);
 		void initLayersImages();
 		void initLayersExportedImages();

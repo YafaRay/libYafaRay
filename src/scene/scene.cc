@@ -269,7 +269,7 @@ bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float
 	return true;
 }
 
-bool Scene::init(const RenderControl &render_control)
+bool Scene::init(const RenderMonitor &render_monitor, const RenderControl &render_control)
 {
 	std::vector<const Primitive *> primitives;
 	for(const auto &[object, object_name, object_enabled] : objects_)

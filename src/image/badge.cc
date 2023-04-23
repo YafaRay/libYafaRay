@@ -29,6 +29,7 @@
 #include "math/interpolation.h"
 #include "common/string.h"
 #include "image/image_manipulation.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -48,7 +49,7 @@ std::string Badge::getFields() const
 	return ss_badge.str();
 }
 
-std::string Badge::getRenderInfo(const RenderControl &render_control) const
+std::string Badge::getRenderInfo(const RenderMonitor &render_monitor, const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
 	ss_badge << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
@@ -58,12 +59,12 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss_badge << " | " << image_size_[Axis::X] << "x" << image_size_[Axis::Y];
-	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
-	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
+	if(render_control.inProgress()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_monitor.currentPassPercent() << "% of pass: " << render_monitor.currentPass() << " / " << render_monitor.totalPasses();
+	else if(render_control.canceled()) ss_badge << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_monitor.currentPassPercent() << "% of pass: " << render_monitor.currentPass() << " / " << render_monitor.totalPasses();
 	else
 	{
-		if(render_control.resumed()) ss_badge << " | film loaded + " << render_control.totalPasses() - 1 << " passes";
-		else ss_badge << " | " << render_control.totalPasses() << " passes";
+		if(render_control.resumed()) ss_badge << " | film loaded + " << render_monitor.totalPasses() - 1 << " passes";
+		else ss_badge << " | " << render_monitor.totalPasses() << " passes";
 	}
 	//if(cx0 != 0) ssBadge << ", xstart=" << cx0;
 	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;
@@ -82,24 +83,24 @@ std::string Badge::getRenderInfo(const RenderControl &render_control) const
 	return ss_badge.str();
 }
 
-std::string Badge::print(const std::string &denoise_params, const RenderControl &render_control) const
+std::string Badge::print(const std::string &denoise_params, const RenderMonitor &render_monitor, const RenderControl &render_control) const
 {
 	std::stringstream ss_badge;
 	ss_badge << getFields() << "\n";
-	//ss_badge << getRenderInfo(render_control) << " | " << render_control.getRenderInfo() << "\n";
-	//ss_badge << render_control.getAaNoiseInfo() << " " << denoise_params;
+	//ss_badge << getRenderInfo(render_monitor, render_control) << " | " << render_monitor.getRenderInfo() << "\n";
+	//ss_badge << render_monitor.getAaNoiseInfo() << " " << denoise_params;
 	ss_badge << denoise_params;
 	return ss_badge.str();
 }
 
-std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderControl &render_control) const
+std::unique_ptr<Image> Badge::generateImage(const std::string &denoise_params, const RenderMonitor &render_monitor, const RenderControl &render_control) const
 {
 	if(position_ == Badge::Position::None) return nullptr;
 	std::stringstream ss_badge;
 	ss_badge << getFields();
-	ss_badge << getRenderInfo(render_control);
-	if(drawRenderSettings()) ss_badge << " | " << render_control.getRenderInfo();
-	if(drawAaNoiseSettings()) ss_badge << "\n" << render_control.getAaNoiseInfo();
+	ss_badge << getRenderInfo(render_monitor, render_control);
+	if(drawRenderSettings()) ss_badge << " | " << render_monitor.getRenderInfo();
+	if(drawAaNoiseSettings()) ss_badge << "\n" << render_monitor.getAaNoiseInfo();
 	if(!denoise_params.empty()) ss_badge << " | " << denoise_params;
 
 	int badge_line_count = 0;

@@ -53,12 +53,12 @@ class Badge
 		std::string getFontPath() const { return font_path_; }
 		float getFontSizeFactor() const { return font_size_factor_; }
 		std::string getFields() const;
-		std::string getRenderInfo(const RenderControl &render_control) const;
+		std::string getRenderInfo(const RenderMonitor &render_monitor, const RenderControl &render_control) const;
 		bool drawAaNoiseSettings() const { return draw_aa_; }
 		bool drawRenderSettings() const { return draw_render_settings_; }
 		void setImageSize(const Size2i &size) { image_size_ = size; }
-		std::string print(const std::string &denoise_params, const RenderControl &render_control) const;
-		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderControl &render_control) const;
+		std::string print(const std::string &denoise_params, const RenderMonitor &render_monitor, const RenderControl &render_control) const;
+		std::unique_ptr<Image> generateImage(const std::string &denoise_params, const RenderMonitor &render_monitor, const RenderControl &render_control) const;
 
 	protected:
 		Size2i image_size_{0};

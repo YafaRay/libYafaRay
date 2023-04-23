@@ -190,7 +190,7 @@ SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, 
 
 SurfaceIntegrator::~SurfaceIntegrator() = default;
 
-bool SurfaceIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
+bool SurfaceIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
 {
 	bool result{true};
 	accelerator_ = scene.getAccelerator();

@@ -21,46 +21,6 @@
 
 namespace yafaray {
 
-void RenderControl::setProgressBar(std::unique_ptr<ProgressBar> progress_bar)
-{
-	progress_bar_ = std::move(progress_bar);
-}
-
-void RenderControl::updateProgressBar(int steps_increment)
-{
-	progress_bar_->update(steps_increment);
-}
-
-void RenderControl::setProgressBarTag(const std::string &text)
-{
-	progress_bar_->setTag(text);
-}
-
-void RenderControl::setProgressBarTag(std::string &&text)
-{
-	progress_bar_->setTag(std::move(text));
-}
-
-void RenderControl::setProgressBarAsDone()
-{
-	progress_bar_->done();
-}
-
-std::string RenderControl::getProgressBarTag() const
-{
-	return progress_bar_->getTag();
-}
-
-int RenderControl::getProgressBarTotalSteps() const
-{
-	return progress_bar_->getTotalSteps();
-}
-
-void RenderControl::initProgressBar(int steps_total, bool colors_enabled)
-{
-	progress_bar_->init(steps_total, colors_enabled);
-}
-
 void RenderControl::setStarted()
 {
 	std::lock_guard<std::mutex>lock_guard(mutx_);
@@ -68,9 +28,6 @@ void RenderControl::setStarted()
 	render_finished_ = false;
 	render_resumed_ = false;
 	render_canceled_ = false;
-	total_passes_ = 0;
-	current_pass_ = 0;
-	current_pass_percent_ = 0.f;
 }
 
 void RenderControl::setResumed()
@@ -100,28 +57,6 @@ void RenderControl::setCanceled()
 	render_canceled_ = true;
 }
 
-void RenderControl::setTotalPasses(int total_passes)
-{
-	std::lock_guard<std::mutex>lock_guard(mutx_);
-	total_passes_ = total_passes;
-}
-
-void RenderControl::setCurrentPass(int current_pass)
-{
-	std::lock_guard<std::mutex>lock_guard(mutx_);
-	current_pass_ = current_pass;
-}
-
-void RenderControl::setAaNoiseInfo(const std::string &aa_noise_settings)
-{
-	aa_noise_info_ = aa_noise_settings;
-}
-
-void RenderControl::setRenderInfo(const std::string &render_settings)
-{
-	render_info_ = render_settings;
-}
-
 bool RenderControl::inProgress() const
 {
 	return render_in_progress_;
@@ -140,21 +75,6 @@ bool RenderControl::finished() const
 bool RenderControl::canceled() const
 {
 	return render_canceled_;
-}
-
-int RenderControl::totalPasses() const
-{
-	return total_passes_;
-}
-
-int RenderControl::currentPass() const
-{
-	return current_pass_;
-}
-
-float RenderControl::currentPassPercent() const
-{
-	return current_pass_percent_;
 }
 
 } //namespace yafaray

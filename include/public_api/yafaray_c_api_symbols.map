@@ -7,6 +7,8 @@ LIBYAFARAY_4.0.0 {
         yafaray_destroyLogger;
         yafaray_createRenderControl;
         yafaray_destroyRenderControl;
+        yafaray_createRenderMonitor;
+        yafaray_destroyRenderMonitor;
         yafaray_createFilm;
         yafaray_destroyFilm;
         yafaray_createScene;

@@ -59,6 +59,7 @@ struct ParamResult;
 class Logger;
 class Image;
 class RenderControl;
+class RenderMonitor;
 template <typename T> struct Uv;
 enum class DarkDetectionType : unsigned char;
 
@@ -83,7 +84,7 @@ class Scene final
 		bool addInstanceOfInstance(size_t instance_id, size_t base_instance_id);
 		bool addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float time);
 		std::pair<const Instance *, ResultFlags> getInstance(size_t instance_id) const;
-		bool init(const RenderControl &render_control);
+		bool init(const RenderMonitor &render_monitor, const RenderControl &render_control);
 		std::tuple<const Object *, size_t, ResultFlags> getObject(const std::string &name) const;
 		std::pair<const Object *, ResultFlags> getObject(size_t object_id) const;
 		const Items<Object> &getObjects() const { return objects_; }

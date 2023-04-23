@@ -35,6 +35,7 @@
 #include "material/sample.h"
 #include "render/renderer.h"
 #include "integrator/volume/integrator_volume.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -197,9 +198,9 @@ BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, ParamResult &pa
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool BidirectionalIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
+bool BidirectionalIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
 	n_paths_ = 0;
 	f_num_lights_ = 1.f / static_cast<float>(numLights());
 	std::vector<float> energies(numLights());
@@ -249,7 +250,7 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, const Sc
 	set << "Bidirectional  ";
 	if(params_.transparent_shadows_) set << "ShadowDepth=" << params_.shadow_depth_ << "  ";
 	if(params_.ao_) set << "AO samples=" << params_.ao_samples_ << " dist=" << params_.ao_distance_ << "  ";
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 	return success;
 }
 
@@ -259,10 +260,10 @@ void BidirectionalIntegrator::cleanup(ImageFilm &image_film) const
 	image_film.setNumDensitySamples(n_paths_); //dirty hack...
 }
 
-bool BidirectionalIntegrator::render(RenderControl &render_control, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
+bool BidirectionalIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
 {
 	image_film.setDensityEstimation(true);
-	return ParentClassType_t::render(render_control, image_film, object_index_highest, material_index_highest);
+	return ParentClassType_t::render(render_control, render_monitor, image_film, object_index_highest, material_index_highest);
 }
 
 /* ============================================================

@@ -35,6 +35,7 @@
 #include "image/image_manipulation.h"
 #include "integrator/surface/integrator_surface.h"
 #include "render/progress_bar.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -213,7 +214,7 @@ void ImageFilm::initLayersExportedImages()
 	}
 }
 
-void ImageFilm::init(RenderControl &render_control, const SurfaceIntegrator &surface_integrator)
+void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator)
 {
 	aa_noise_params_ = surface_integrator.getAaParameters();
 	edge_toon_params_ = surface_integrator.getEdgeToonParams();
@@ -250,7 +251,7 @@ void ImageFilm::init(RenderControl &render_control, const SurfaceIntegrator &sur
 	}
 	else area_cnt_ = 1;
 
-	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
+	render_monitor.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
 
 	cancel_ = false;
 	completed_cnt_ = 0;
@@ -266,8 +267,8 @@ void ImageFilm::init(RenderControl &render_control, const SurfaceIntegrator &sur
 	render_control.startTimer("imagesAutoSaveTimer");
 	render_control.startTimer("filmAutoSaveTimer");
 
-	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
-	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(render_control); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave) imageFilmLoadAllInFolder(render_control, render_monitor);	//Load all the existing Film in the images output folder, combining them together. It will load only the Film files with the same "base name" as the output image film (including file name, computer node name and frame) to allow adding samples to animations.
+	if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) imageFilmFileBackup(render_control, render_monitor); //If the imageFilm is set to Save, at the start rename the previous film file as a "backup" just in case the user has made a mistake and wants to get the previous film back.
 
 	if(notify_layer_callback_)
 	{
@@ -279,7 +280,7 @@ void ImageFilm::init(RenderControl &render_control, const SurfaceIntegrator &sur
 	}
 }
 
-bool ImageFilm::render(RenderControl &render_control, SurfaceIntegrator &surface_integrator, const Scene &scene)
+bool ImageFilm::render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator, const Scene &scene)
 {
 	/*FIXME bool success = surface_integrator.preprocess(render_control, fast_random, scene);
 	if(!success)
@@ -290,19 +291,19 @@ bool ImageFilm::render(RenderControl &render_control, SurfaceIntegrator &surface
 
 	//logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	render_control.setStarted();
-	bool success = surface_integrator.render(render_control, *this, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+	bool success = surface_integrator.render(render_control, render_monitor, *this, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
 	if(!success)
 	{
 		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");
 		return false;
 	}
 	surface_integrator.cleanup(*this);
-	flush(render_control, ImageFilm::All);
+	flush(render_control, render_monitor, ImageFilm::All);
 	render_control.setFinished();
 	return true;
 }
 
-int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
+int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	next_area_ = 0;
 	n_pass_++;
@@ -321,14 +322,14 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 		{
 			for(auto &output : outputs_)
 			{
-				if(output.item_) flush(render_control, All);
+				if(output.item_) flush(render_control, render_monitor, All);
 			}
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Pass) && (film_load_save_.auto_save_.pass_counter_ >= film_load_save_.auto_save_.interval_passes_))
 		{
-			imageFilmSave(render_control);
-				film_load_save_.auto_save_.pass_counter_ = 0;
+			imageFilmSave(render_control, render_monitor);
+			film_load_save_.auto_save_.pass_counter_ = 0;
 		}
 	}
 
@@ -479,8 +480,8 @@ int ImageFilm::nextPass(RenderControl &render_control, bool adaptive_aa, const s
 
 	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
-	render_control.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
-	render_control.setProgressBarTag(pass_string.str());
+	render_monitor.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
+	render_monitor.setProgressBarTag(pass_string.str());
 	completed_cnt_ = 0;
 
 	return n_resample;
@@ -528,7 +529,7 @@ bool ImageFilm::nextArea(RenderArea &a)
 	return false;
 }
 
-void ImageFilm::finishArea(RenderControl &render_control, const RenderArea &a, const EdgeToonParams &edge_params)
+void ImageFilm::finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a, const EdgeToonParams &edge_params)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
 	const int end_x = a.x_ + a.w_ - params_.start_x_;
@@ -589,23 +590,23 @@ void ImageFilm::finishArea(RenderControl &render_control, const RenderArea &a, c
 		if((images_auto_save_params_.interval_type_ == AutoSaveParams::IntervalType::Time) && (images_auto_save_params_.timer_ > images_auto_save_params_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("imagesAutoSaveTimer=", images_auto_save_params_.timer_);
-			flush(render_control, All);
+			flush(render_control, render_monitor, All);
 			resetImagesAutoSaveTimer();
 		}
 
 		if((film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save) && (film_load_save_.auto_save_.interval_type_ == AutoSaveParams::IntervalType::Time) && (film_load_save_.auto_save_.timer_ > film_load_save_.auto_save_.interval_seconds_))
 		{
 			if(logger_.isDebug())logger_.logDebug("filmAutoSaveTimer=", film_load_save_.auto_save_.timer_);
-			imageFilmSave(render_control);
+			imageFilmSave(render_control, render_monitor);
 			resetFilmAutoSaveTimer();
 		}
 	}
 
-	if(++completed_cnt_ == area_cnt_) render_control.setProgressBarAsDone();
-	else render_control.updateProgressBar(a.w_ * a.h_);
+	if(++completed_cnt_ == area_cnt_) render_monitor.setProgressBarAsDone();
+	else render_monitor.updateProgressBar(a.w_ * a.h_);
 }
 
-void ImageFilm::flush(RenderControl &render_control, Flags flags)
+void ImageFilm::flush(RenderControl &render_control, RenderMonitor &render_monitor, Flags flags)
 {
 	if(render_control.finished())
 	{
@@ -659,8 +660,8 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 	if(render_control.finished())
 	{
 		std::stringstream ss;
-		ss << printRenderStats(render_control, Size2i{{params_.width_, params_.height_}});
-		ss << render_control.getAaNoiseInfo();
+		ss << printRenderStats(render_control, render_monitor, Size2i{{params_.width_, params_.height_}});
+		ss << render_monitor.getAaNoiseInfo();
 		logger_.logParams("--------------------------------------------------------------------------------");
 		for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 		logger_.logParams("--------------------------------------------------------------------------------");
@@ -676,15 +677,15 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 			if(render_control.finished())
 			{
 				std::stringstream ss;
-				ss << output.item_->printBadge(render_control);
+				ss << output.item_->printBadge(render_monitor, render_control);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 				for(std::string line; std::getline(ss, line, '\n');) if(line != "" && line != "\n") logger_.logParams(line);
 				//logger_.logParams("--------------------------------------------------------------------------------");
 			}
-			std::string old_tag{render_control.getProgressBarTag()};
-			render_control.setProgressBarTag(pass_string.str());
-			output.item_->flush(render_control);
-			render_control.setProgressBarTag(old_tag);
+			std::string old_tag{render_monitor.getProgressBarTag()};
+			render_monitor.setProgressBarTag(pass_string.str());
+			output.item_->flush(render_monitor, render_control);
+			render_monitor.setProgressBarTag(old_tag);
 		}
 	}
 
@@ -692,7 +693,7 @@ void ImageFilm::flush(RenderControl &render_control, Flags flags)
 	{
 		if(film_load_save_.mode_ == FilmLoadSave::Mode::LoadAndSave || film_load_save_.mode_ == FilmLoadSave::Mode::Save)
 		{
-			imageFilmSave(render_control);
+			imageFilmSave(render_control, render_monitor);
 		}
 
 		render_control.stopTimer("imagesAutoSaveTimer");
@@ -963,15 +964,15 @@ bool ImageFilm::imageFilmLoad(const std::string &filename)
 	return true;
 }
 
-void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
+void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control, RenderMonitor &render_monitor)
 {
 	std::stringstream pass_string;
 	pass_string << "Loading ImageFilm files";
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_monitor.getProgressBarTag()};
+	render_monitor.setProgressBarTag(pass_string.str());
 
 	const Path path_image_output(film_load_save_.path_);
 	std::string dir = path_image_output.getDirectory();
@@ -1036,10 +1037,10 @@ void ImageFilm::imageFilmLoadAllInFolder(RenderControl &render_control)
 		if(logger_.isVerbose()) logger_.logVerbose("ImageFilm: loaded film '", film_file, "'");
 	}
 	if(any_film_loaded) render_control.setResumed();
-	render_control.setProgressBarTag(old_tag);
+	render_monitor.setProgressBarTag(old_tag);
 }
 
-bool ImageFilm::imageFilmSave(RenderControl &render_control)
+bool ImageFilm::imageFilmSave(RenderControl &render_control, RenderMonitor &render_monitor)
 {
 	bool result_ok = true;
 	std::stringstream pass_string;
@@ -1047,8 +1048,8 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_monitor.getProgressBarTag()};
+	render_monitor.setProgressBarTag(pass_string.str());
 
 	const std::string film_path = getFilmPath();
 	File file(film_path);
@@ -1114,19 +1115,19 @@ bool ImageFilm::imageFilmSave(RenderControl &render_control)
 		}
 	}
 	file.close();
-	render_control.setProgressBarTag(old_tag);
+	render_monitor.setProgressBarTag(old_tag);
 	return result_ok;
 }
 
-void ImageFilm::imageFilmFileBackup(RenderControl &render_control)
+void ImageFilm::imageFilmFileBackup(RenderControl &render_control, RenderMonitor &render_monitor)
 {
 	std::stringstream pass_string;
 	pass_string << "Creating backup of the previous ImageFilm file...";
 
 	logger_.logInfo(pass_string.str());
 
-	std::string old_tag{render_control.getProgressBarTag()};
-	render_control.setProgressBarTag(pass_string.str());
+	std::string old_tag{render_monitor.getProgressBarTag()};
+	render_monitor.setProgressBarTag(pass_string.str());
 
 	const std::string film_path = getFilmPath();
 	const std::string film_path_backup = film_path + "-previous.bak";
@@ -1138,10 +1139,10 @@ void ImageFilm::imageFilmFileBackup(RenderControl &render_control)
 		if(!result_ok) logger_.logWarning("imageFilm: error during imageFilm file backup");
 	}
 
-	render_control.setProgressBarTag(old_tag);
+	render_monitor.setProgressBarTag(old_tag);
 }
 
-std::string ImageFilm::printRenderStats(const RenderControl &render_control, const Size2i &size)
+std::string ImageFilm::printRenderStats(const RenderControl &render_control, const RenderMonitor &render_monitor, const Size2i &size)
 {
 	std::stringstream ss;
 	ss << "\nYafaRay (" << buildinfo::getVersionString() << buildinfo::getBuildTypeSuffix() << ")" << " " << buildinfo::getBuildOs() << " " << buildinfo::getBuildArchitectureBits() << "bit (" << buildinfo::getBuildCompiler() << ")";
@@ -1152,12 +1153,12 @@ std::string ImageFilm::printRenderStats(const RenderControl &render_control, con
 	int timem, timeh;
 	Timer::splitTime(times, &times, &timem, &timeh);
 	ss << " | " << size[Axis::X] << "x" << size[Axis::Y];
-	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
-	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_control.currentPassPercent() << "% of pass: " << render_control.currentPass() << " / " << render_control.totalPasses();
+	if(render_control.inProgress()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "in progress " << std::fixed << std::setprecision(1) << render_monitor.currentPassPercent() << "% of pass: " << render_monitor.currentPass() << " / " << render_monitor.totalPasses();
+	else if(render_control.canceled()) ss << " | " << (render_control.resumed() ? "film loaded + " : "") << "stopped at " << std::fixed << std::setprecision(1) << render_monitor.currentPassPercent() << "% of pass: " << render_monitor.currentPass() << " / " << render_monitor.totalPasses();
 	else
 	{
-		if(render_control.resumed()) ss << " | film loaded + " << render_control.totalPasses() - 1 << " passes";
-		else ss << " | " << render_control.totalPasses() << " passes";
+		if(render_control.resumed()) ss << " | film loaded + " << render_monitor.totalPasses() - 1 << " passes";
+		else ss << " | " << render_monitor.totalPasses() << " passes";
 	}
 	//if(cx0 != 0) ssBadge << ", xstart=" << cx0;
 	//if(cy0 != 0) ssBadge << ", ystart=" << cy0;

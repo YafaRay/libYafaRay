@@ -40,6 +40,7 @@
 #include "photon/photon_sample.h"
 #include "volume/handler/volume_handler.h"
 #include "common/sysinfo.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -98,7 +99,7 @@ Rgb CausticPhotonIntegrator::causticPhotons(ColorLayers *color_layers, const Ray
 	return col;
 }
 
-void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
+void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, RenderMonitor &render_monitor, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
 {
 	bool done = false;
 	const int num_lights_caustic = lights_caustic.size();
@@ -210,7 +211,7 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, unsig
 		++curr;
 		if(curr % pb_step == 0)
 		{
-			render_control.updateProgressBar();
+			render_monitor.updateProgressBar();
 			if(render_control.canceled()) { return; }
 		}
 		done = (curr >= n_caus_photons_thread);
@@ -221,7 +222,7 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, unsig
 	getCausticMap()->unlock();
 }
 
-bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control)
+bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, RenderMonitor &render_monitor)
 {
 	getCausticMap()->clear();
 	getCausticMap()->setNumPaths(0);
@@ -248,9 +249,9 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control)
 		}
 
 		logger_.logInfo(getName(), ": Building caustics photon map...");
-		render_control.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
+		render_monitor.initProgressBar(128, logger_.getConsoleLogColorsEnabled());
 		const int pb_step = std::max(1, n_caus_photons_ / 128);
-		render_control.setProgressBarTag("Building caustics photon map...");
+		render_monitor.setProgressBarTag("Building caustics photon map...");
 
 		unsigned int curr = 0;
 
@@ -260,19 +261,19 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control)
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
-		render_control.setProgressBarAsDone();
-		render_control.setProgressBarTag("Caustic photon map built.");
+		render_monitor.setProgressBarAsDone();
+		render_monitor.setProgressBarTag("Caustic photon map built.");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		logger_.logInfo(getName(), ": Shot ", curr, " caustic photons from ", num_lights_caustic, " light(s).");
 		if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Stored caustic photons: ", getCausticMap()->nPhotons());
 
 		if(getCausticMap()->nPhotons() > 0)
 		{
-			render_control.setProgressBarTag("Building caustic photons kd-tree...");
-			getCausticMap()->updateTree(render_control);
+			render_monitor.setProgressBarTag("Building caustic photons kd-tree...");
+			getCausticMap()->updateTree(render_monitor, render_control);
 			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Done.");
 		}
 	}

@@ -17,8 +17,8 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_RENDER_CONTROL_H
-#define LIBYAFARAY_RENDER_CONTROL_H
+#ifndef LIBYAFARAY_RENDER_MONITOR_H
+#define LIBYAFARAY_RENDER_MONITOR_H
 
 #include "common/timer.h"
 #include <string>
@@ -29,17 +29,26 @@ namespace yafaray {
 
 class ProgressBar;
 
-class RenderControl final
+class RenderMonitor final
 {
 	public:
-		void setStarted();
-		void setResumed();
-		void setFinished();
-		void setCanceled();
-		bool inProgress() const;
-		bool resumed() const;
-		bool finished() const;
-		bool canceled() const;
+		void setTotalPasses(int total_passes);
+		void setCurrentPass(int current_pass);
+		void setRenderInfo(const std::string &render_settings);
+		void setAaNoiseInfo(const std::string &aa_noise_settings);
+		int totalPasses() const;
+		int currentPass() const;
+		float currentPassPercent() const;
+		std::string getRenderInfo() const { return render_info_; }
+		std::string getAaNoiseInfo() const { return aa_noise_info_; }
+		void setProgressBar(std::unique_ptr<ProgressBar> progress_bar);
+		void updateProgressBar(int steps_increment = 1);
+		void setProgressBarTag(const std::string &text);
+		void setProgressBarTag(std::string &&text);
+		void initProgressBar(int steps_total, bool colors_enabled);
+		void setProgressBarAsDone();
+		std::string getProgressBarTag() const;
+		int getProgressBarTotalSteps() const;
 		bool addTimerEvent(const std::string &event) { return timer_.addEvent(event); }
 		bool startTimer(const std::string &event) { return timer_.start(event); }
 		bool stopTimer(const std::string &event) { return timer_.stop(event); }
@@ -47,14 +56,15 @@ class RenderControl final
 		[[nodiscard]] double getTimerTimeNotStopping(const std::string &event) const { return timer_.getTimeNotStopping(event); }
 
 	private:
-		bool render_in_progress_ = false;
-		bool render_finished_ = false;
-		bool render_resumed_ = false;
-		bool render_canceled_ = false;
+		int total_passes_{0};
+		int current_pass_{0};
+		std::string render_info_;
+		std::string aa_noise_info_;
 		Timer timer_;
+		std::unique_ptr<ProgressBar> progress_bar_;
 		std::mutex mutx_;
 };
 
 } //namespace yafaray
 
-#endif //LIBYAFARAY_RENDER_CONTROL_H
+#endif //LIBYAFARAY_RENDER_MONITOR_H

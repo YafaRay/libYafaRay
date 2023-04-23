@@ -45,11 +45,11 @@ void PhotonGather::operator()(const Photon *photon, float dist_2, float &max_dis
 	}
 }
 
-void PhotonMap::updateTree(const RenderControl &render_control)
+void PhotonMap::updateTree(const RenderMonitor &render_monitor, const RenderControl &render_control)
 {
 	if(photons_.size() > 0)
 	{
-		tree_ = std::make_unique<kdtree::PointKdTree<Photon>>(logger_, render_control, photons_, name_, threads_pkd_tree_);
+		tree_ = std::make_unique<kdtree::PointKdTree<Photon>>(logger_, render_monitor, render_control, photons_, name_, threads_pkd_tree_);
 		updated_ = true;
 	}
 	else tree_ = nullptr;

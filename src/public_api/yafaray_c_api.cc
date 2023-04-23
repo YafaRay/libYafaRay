@@ -28,6 +28,7 @@
 #include "param/param.h"
 #include "integrator/surface/integrator_surface.h"
 #include "render/imagefilm.h"
+#include "render/render_monitor.h"
 #include <cstring>
 
 /*yafaray_Scene *yafaray_createInterface(yafaray_InterfaceType interface_type, const char *exported_file_path, const yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
@@ -62,19 +63,30 @@ void yafaray_destroyLogger(yafaray_Logger *logger)
 	delete reinterpret_cast<yafaray::Logger *>(logger);
 }
 
-yafaray_RenderControl *yafaray_createRenderControl(yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+yafaray_RenderControl *yafaray_createRenderControl()
 {
 	auto render_control{new yafaray::RenderControl()};
-	std::unique_ptr<yafaray::ProgressBar> progress_bar;
-	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
-	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
-	render_control->setProgressBar(std::move(progress_bar));
 	return reinterpret_cast<yafaray_RenderControl *>(render_control);
 }
 
 void yafaray_destroyRenderControl(yafaray_RenderControl *render_control)
 {
 	delete reinterpret_cast<yafaray::RenderControl *>(render_control);
+}
+
+yafaray_RenderMonitor *yafaray_createRenderMonitor(yafaray_ProgressBarCallback monitor_callback, void *callback_data, yafaray_DisplayConsole progress_bar_display_console)
+{
+	auto render_monitor{new yafaray::RenderMonitor()};
+	std::unique_ptr<yafaray::ProgressBar> progress_bar;
+	if(progress_bar_display_console == YAFARAY_DISPLAY_CONSOLE_NORMAL) progress_bar = std::make_unique<yafaray::ConsoleProgressBar>(80, monitor_callback, callback_data);
+	else progress_bar = std::make_unique<yafaray::ProgressBar>(monitor_callback, callback_data);
+	render_monitor->setProgressBar(std::move(progress_bar));
+	return reinterpret_cast<yafaray_RenderMonitor *>(render_monitor);
+}
+
+void yafaray_destroyRenderMonitor(yafaray_RenderMonitor *render_monitor)
+{
+	delete reinterpret_cast<yafaray::RenderMonitor *>(render_monitor);
 }
 
 yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_SurfaceIntegrator *surface_integrator, const char *name, const yafaray_ParamMap *param_map)
@@ -467,22 +479,22 @@ int yafaray_getFilmHeight(const yafaray_Film *film)
 	return reinterpret_cast<const yafaray::ImageFilm *>(film)->getHeight();
 }
 
-void yafaray_preprocessScene(yafaray_RenderControl *render_control, yafaray_Scene *scene)
+void yafaray_preprocessScene(yafaray_RenderControl *render_control, yafaray_Scene *scene, const yafaray_RenderMonitor *render_monitor)
 {
 	if(!render_control || !scene) return;
-	reinterpret_cast<yafaray::Scene *>(scene)->init(*reinterpret_cast<yafaray::RenderControl *>(render_control));
+	reinterpret_cast<yafaray::Scene *>(scene)->init(*reinterpret_cast<const yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::RenderControl *>(render_control));
 }
 
-void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene)
+void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene)
 {
 	if(!render_control || !surface_integrator || !scene) return;
-	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
-void yafaray_render(yafaray_RenderControl *render_control, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene)
+void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene)
 {
 	if(!render_control || !surface_integrator || !film || !scene) return;
-	reinterpret_cast<yafaray::ImageFilm *>(film)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::ImageFilm *>(film)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
 void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map)

@@ -27,6 +27,7 @@
 #include "integrator/volume/integrator_volume.h"
 #include "common/timer.h"
 #include "render/imagefilm.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -51,9 +52,9 @@ DirectLightIntegrator::DirectLightIntegrator(Logger &logger, ParamResult &param_
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool DirectLightIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
+bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
 	std::stringstream set;
 
 	render_control.addTimerEvent("prepass");
@@ -74,7 +75,7 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, const Scen
 
 	if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 	{
-		success = success && createCausticMap(render_control);
+		success = success && createCausticMap(render_control, render_monitor);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 	}
 
@@ -83,7 +84,7 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, const Scen
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 
 	if(logger_.isVerbose())
 	{

@@ -29,6 +29,7 @@
 #include "volume/handler/volume_handler.h"
 #include "integrator/volume/integrator_volume.h"
 #include "render/imagefilm.h"
+#include "render/render_monitor.h"
 
 namespace yafaray {
 
@@ -79,9 +80,9 @@ PathIntegrator::PathIntegrator(Logger &logger, ParamResult &param_result, const 
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(RenderControl &render_control, const Scene &scene)
+bool PathIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, scene);
+	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
 	std::stringstream set;
 
 	render_control.addTimerEvent("prepass");
@@ -98,7 +99,7 @@ bool PathIntegrator::preprocess(RenderControl &render_control, const Scene &scen
 
 	if(params_.caustic_type_.has(CausticType::Photon))
 	{
-		success = success && createCausticMap(render_control);
+		success = success && createCausticMap(render_control, render_monitor);
 	}
 
 	if(params_.caustic_type_ == CausticType::Path)
@@ -124,7 +125,7 @@ bool PathIntegrator::preprocess(RenderControl &render_control, const Scene &scen
 
 	set << "| photon maps: " << std::fixed << std::setprecision(1) << render_control.getTimerTime("prepass") << "s" << " [" << num_threads_photons_ << " thread(s)]";
 
-	render_control.setRenderInfo(render_control.getRenderInfo() + set.str());
+	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 
 	if(logger_.isVerbose())
 	{

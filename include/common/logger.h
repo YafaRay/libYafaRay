@@ -40,6 +40,7 @@ namespace yafaray {
 class Badge;
 struct ConsoleColor;
 class RenderControl;
+class RenderMonitor;
 class Timer;
 
 class LogEntry final
@@ -78,8 +79,8 @@ class Logger final
 		bool getSaveStats() const { return !statsEmpty(); }
 		bool getConsoleLogColorsEnabled() const { return console_log_colors_enabled_; }
 
-		void saveTxtLog(const std::string &name, const Badge &badge, const RenderControl &render_control);
-		void saveHtmlLog(const std::string &name, const Badge &badge, const RenderControl &render_control);
+		void saveTxtLog(const std::string &name, const Badge &badge, const RenderMonitor &render_monitor, const RenderControl &render_control);
+		void saveHtmlLog(const std::string &name, const Badge &badge, const RenderMonitor &render_monitor, const RenderControl &render_control);
 		void clearMemoryLog();
 		void clearAll();
 

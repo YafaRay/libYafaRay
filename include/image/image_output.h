@@ -49,11 +49,11 @@ class ImageOutput final
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
-		void flush(const RenderControl &render_control);
+		void flush(const RenderMonitor &render_monitor, const RenderControl &render_control);
 		void init(const Size2i &size, const ImageLayers *exported_image_layers, const std::string &camera_name);
 		[[nodiscard]] std::string getName() const { return name_; }
-		std::string printBadge(const RenderControl &render_control) const;
-		std::unique_ptr<Image> generateBadgeImage(const RenderControl &render_control) const;
+		std::string printBadge(const RenderMonitor &render_monitor, const RenderControl &render_control) const;
+		std::unique_ptr<Image> generateBadgeImage(const RenderMonitor &render_monitor, const RenderControl &render_control) const;
 
 	private:
 		struct Type : public Enum<Type>
@@ -93,8 +93,8 @@ class ImageOutput final
 
 		} params_;
 		bool denoiseEnabled() const { return params_.denoise_enabled_; }
-		void saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderControl &render_control);
-		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderControl &render_control);
+		void saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderMonitor &render_monitor, const RenderControl &render_control);
+		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderMonitor &render_monitor, const RenderControl &render_control);
 
 		size_t id_{0};
 		std::string name_ = "out";
