@@ -95,10 +95,8 @@ void TiledIntegrator::precalcDepths() const
 	image_film_->setMaxDepthInverse(max_depth);
 }
 
-bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film)
+bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor)
 {
-	if(!image_film) return false;
-	image_film_ = image_film;
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
 	aa_settings << " passes=" << aa_noise_params_.passes_;
@@ -217,7 +215,6 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 	render_monitor.stopTimer("rendert");
 	render_control.setFinished();
 	logger_.logInfo(getName(), ": Overall rendertime: ", render_monitor.getTimerTime("rendert"), "s");
-	image_film_ = nullptr;
 	return true;
 }
 

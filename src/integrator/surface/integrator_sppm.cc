@@ -96,10 +96,8 @@ SppmIntegrator::SppmIntegrator(Logger &logger, ParamResult &param_result, const 
 	getDiffuseMap()->setName("Diffuse Photon Map");
 }
 
-bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film)
+bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor)
 {
-	if(!image_film) return false;
-	image_film_ = image_film;
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
 	aa_settings << " passes=" << params_.num_passes_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
@@ -199,7 +197,6 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 
 	render_monitor.setRenderInfo(render_monitor.getRenderInfo() + set.str());
 	if(logger_.isVerbose()) logger_.logVerbose(set.str());
-	image_film_ = nullptr;
 	return true;
 }
 

@@ -310,4 +310,22 @@ int SurfaceIntegrator::setNumThreads(int threads)
 	return result;
 }
 
+bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, bool resume)
+{
+	if(!image_film) return false;
+	image_film_ = image_film;
+	if(resume) render_control.setResumed();
+	else render_control.setStarted();
+	const bool success = render(render_control, render_monitor);
+	if(!success)
+	{
+		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");
+		return false;
+	}
+	image_film_->flush(render_control, render_monitor, ImageFilm::All);
+	render_control.setFinished();
+	image_film_ = nullptr;
+	return true;
+}
+
 } //namespace yafaray

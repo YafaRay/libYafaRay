@@ -84,7 +84,7 @@ class SppmIntegrator final : public MonteCarloIntegrator
 			PARAM_DECL(bool , pm_ire_, false, "pmIRE", "Flag to say if using PM for initial radius estimate");
 			PARAM_DECL(int, threads_photons_, -1, "threads_photons", "Number of threads for photon mapping, -1 = auto detection");
 		} params_;
-		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film) override;
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor) override;
 		/*! render a tile; only required by default implementation of render() */
 		bool renderTile(std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderMonitor &render_monitor, const RenderControl &render_control) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;

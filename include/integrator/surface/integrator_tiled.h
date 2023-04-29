@@ -42,14 +42,14 @@ class ThreadControl final
 
 class TiledIntegrator : public SurfaceIntegrator
 {
-	public:
+	protected:
 		inline static std::string getClassName() { return "TiledIntegrator"; }
 		TiledIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map) : SurfaceIntegrator{logger, param_result, name, param_map} { }
 		/*! Rendering prepasses to precalc suff in case needed */
 		virtual void prePass(RenderControl &render_control, RenderMonitor &render_monitor, int samples, int offset, bool adaptive) { } //!< Called before the proper rendering of all the tiles starts
 		/*! do whatever is required to render the image; default implementation renders image in passes
 		dividing each pass into tiles for multithreading. */
-		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film) override;
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor) override;
 		/*! render a pass; only required by the default implementation of render() */
 		bool renderPass(RenderControl &render_control, RenderMonitor &render_monitor, std::vector<int> &correlative_sample_number, int samples, int offset, bool adaptive, int aa_pass_number, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier);
 		virtual bool renderTile(std::vector<int> &correlative_sample_number, const RenderArea &a, int n_samples, int offset, bool adaptive, int thread_id, int aa_pass_number, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const RenderMonitor &render_monitor, const RenderControl &render_control);

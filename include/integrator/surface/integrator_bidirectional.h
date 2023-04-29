@@ -59,7 +59,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
 			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
 		} params_;
-		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film) override;
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor) override;
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
@@ -67,7 +67,6 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathVertex;
 		struct PathEvalVertex;
 		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
-		void cleanup(ImageFilm &image_film) const override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len) const;
 		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd) const;

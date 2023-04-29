@@ -253,16 +253,12 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, RenderMo
 	return success;
 }
 
-void BidirectionalIntegrator::cleanup(ImageFilm &image_film) const
-{
-	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
-	image_film_->setNumDensitySamples(n_paths_); //dirty hack...
-}
-
-bool BidirectionalIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film)
+bool BidirectionalIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor)
 {
 	image_film_->setDensityEstimation(true);
-	return ParentClassType_t::render(render_control, render_monitor, image_film);
+	return ParentClassType_t::render(render_control, render_monitor);
+	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
+	image_film_->setNumDensitySamples(n_paths_); //dirty hack...
 }
 
 /* ============================================================

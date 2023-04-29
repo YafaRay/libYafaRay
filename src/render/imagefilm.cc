@@ -279,29 +279,6 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 	}
 }
 
-bool ImageFilm::render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator)
-{
-	/*FIXME bool success = surface_integrator.preprocess(render_control, fast_random, scene);
-	if(!success)
-	{
-		logger_.logError(getClassName(), " '", getName(), "': Preprocessing process failed, exiting...");
-		return false;
-	} */
-
-	//logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
-	render_control.setStarted();
-	bool success = surface_integrator.render(render_control, render_monitor, this);
-	if(!success)
-	{
-		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");
-		return false;
-	}
-	surface_integrator.cleanup(*this);
-	flush(render_control, render_monitor, ImageFilm::All);
-	render_control.setFinished();
-	return true;
-}
-
 int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
 {
 	next_area_ = 0;
