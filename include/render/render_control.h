@@ -30,10 +30,12 @@ class RenderControl final
 		void setStarted() { flags_ = InProgress; }
 		void setResumed() { flags_ = InProgress | Resumed; }
 		void setFinished() { flags_ = Finished; }
+		void setProgressive() { flags_ |= Progressive; }
 		void setCanceled() { flags_ = Canceled; }
 		bool inProgress() const { return flags_ & InProgress; }
 		bool resumed() const { return flags_ & Resumed; }
 		bool finished() const { return flags_ & Finished; }
+		bool progressive() const { return flags_ & Progressive; }
 		bool canceled() const { return flags_ & Canceled; }
 
 	private:
@@ -41,7 +43,8 @@ class RenderControl final
 			InProgress = 1 << 0,
 			Finished = 1 << 1,
 			Resumed = 1 << 2,
-			Canceled = 1 << 3,
+			Progressive = 1 << 3,
+			Canceled = 1 << 4,
 		};
 		std::atomic<unsigned char> flags_{0};
 };

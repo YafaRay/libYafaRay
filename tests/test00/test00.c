@@ -271,7 +271,7 @@ int main(void)
 	render_control = yafaray_createRenderControl();
 	yafaray_preprocessScene(render_control, scene, render_monitor);
 	yafaray_preprocessSurfaceIntegrator(render_control, render_monitor, surface_integrator, scene);
-	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_BOOL_FALSE);
+	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_BOOL_FALSE, YAFARAY_BOOL_FALSE);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray_destroyRenderControl(render_control);
 	yafaray_destroyRenderMonitor(render_monitor);

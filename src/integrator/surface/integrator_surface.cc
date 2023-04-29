@@ -310,12 +310,16 @@ int SurfaceIntegrator::setNumThreads(int threads)
 	return result;
 }
 
-bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, bool resume)
+bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, bool resume, bool progressive)
 {
 	if(!image_film) return false;
 	image_film_ = image_film;
 	if(resume) render_control.setResumed();
-	else render_control.setStarted();
+	else
+	{
+		render_control.setStarted();
+		if(progressive) render_control.setProgressive();
+	}
 	const bool success = render(render_control, render_monitor);
 	if(!success)
 	{
