@@ -73,9 +73,9 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
 		} params_;
 		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
-		std::pair<Rgb, float> integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) override;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 		void diffuseWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
-		Rgb finalGathering(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, unsigned int base_sampling_offset, int thread_id, const Camera *camera, bool chromatic_enabled, float wavelength, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
+		Rgb finalGathering(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
 		static void preGatherWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData *gdata, float ds_rad, int n_search);
 		static void photonMapKdTreeWorker(PhotonMap *photon_map, const RenderMonitor &render_monitor, const RenderControl &render_control);

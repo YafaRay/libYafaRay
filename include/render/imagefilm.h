@@ -68,7 +68,7 @@ class ImageFilm final
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator);
-		bool render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator, const Scene &scene);
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */

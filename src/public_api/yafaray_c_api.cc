@@ -492,10 +492,10 @@ void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, 
 	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
-void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene)
+void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film)
 {
-	if(!render_control || !surface_integrator || !film || !scene) return;
-	reinterpret_cast<yafaray::ImageFilm *>(film)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator), *reinterpret_cast<const yafaray::Scene *>(scene));
+	if(!render_control || !surface_integrator || !film) return;
+	reinterpret_cast<yafaray::ImageFilm *>(film)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator));
 }
 
 void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map)

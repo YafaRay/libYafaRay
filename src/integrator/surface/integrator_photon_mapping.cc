@@ -544,12 +544,12 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 // final gathering: this is basically a full path tracer only that it uses the radiance map only
 // at the path end. I.e. paths longer than 1 are only generated to overcome lack of local radiance detail.
 // precondition: initBSDF of current spot has been called!
-Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, unsigned int base_sampling_offset, int thread_id, const Camera *camera, bool chromatic_enabled, float wavelength, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
+Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	Rgb path_col(0.0);
 	float w = 0.f;
 
-	int n_sampl = (int) ceilf(std::max(1, params_.fg_samples_ / ray_division.division_) * aa_indirect_sample_multiplier);
+	int n_sampl = (int) ceilf(std::max(1, params_.fg_samples_ / ray_division.division_) * pixel_sampling_data.aa_indirect_sample_multiplier_);
 	for(int i = 0; i < n_sampl; ++i)
 	{
 		Rgb throughput(1.0);
@@ -570,7 +570,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 		}
 
 		Sample s(s_1, s_2, BsdfFlags::Diffuse | BsdfFlags::Reflect | BsdfFlags::Transmit); // glossy/dispersion/specular done via recursive raytracing
-		scol = sp.sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, camera);
+		scol = sp.sample(pwo, p_ray.dir_, s, w, chromatic_enabled, wavelength, image_film_->getCamera());
 
 		scol *= w;
 		if(scol.isBlack()) continue;
@@ -580,7 +580,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 		p_ray.from_ = sp.p_;
 		throughput = scol;
 		std::unique_ptr<const SurfacePoint> hit;
-		std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera);
+		std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, image_film_->getCamera());
 		did_hit = static_cast<bool>(hit);
 		if(!did_hit) continue;   //hit background
 		length = p_ray.tmax_;
@@ -605,7 +605,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 			{
 				if(close)
 				{
-					lcol = estimateOneDirectLight(random_generator, correlative_sample_number, base_sampling_offset, thread_id, camera, chromatic_enabled, wavelength, *hit, pwo, offs, aa_light_sample_multiplier, ray_division, pixel_sampling_data);
+					lcol = estimateOneDirectLight(random_generator, correlative_sample_number, chromatic_enabled, wavelength, *hit, pwo, offs, ray_division, pixel_sampling_data);
 				}
 				else if(caustic)
 				{
@@ -631,7 +631,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 			}
 
 			Sample sb(s_1, s_2, (close) ? BsdfFlags::All : BsdfFlags::AllSpecular | BsdfFlags::Filter);
-			scol = hit->sample(pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, camera);
+			scol = hit->sample(pwo, p_ray.dir_, sb, w, chromatic_enabled, wavelength, image_film_->getCamera());
 
 			if(sb.pdf_ <= 1.0e-6f)
 			{
@@ -643,7 +643,7 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 			p_ray.tmax_ = -1.f;
 			p_ray.from_ = hit->p_;
 			throughput *= scol;
-			std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, camera);
+			std::tie(hit, p_ray.tmax_) = accelerator_->intersect(p_ray, image_film_->getCamera());
 			did_hit = static_cast<bool>(hit);
 			if(!did_hit) break; //hit background
 			length += p_ray.tmax_;
@@ -667,16 +667,14 @@ Rgb PhotonIntegrator::finalGathering(RandomGenerator &random_generator, std::vec
 	return path_col / (float)n_sampl;
 }
 
-std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> PhotonIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	static int n_max = 0;
 	static int calls = 0;
 	++calls;
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto base_sampling_offset{image_film.getBaseSamplingOffset()};
-	const auto camera{image_film.getCamera()};
-	const auto [sp, tmax] = accelerator_->intersect(ray, camera);
+	const auto [sp, tmax] = accelerator_->intersect(ray, image_film_->getCamera());
 	ray.tmax_ = tmax;
 	if(sp)
 	{
@@ -724,8 +722,8 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm &image_film, Ray &ra
 
 				if(mat_bsdfs.has(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(random_generator, color_layers, camera, chromatic_enabled, wavelength, aa_light_sample_multiplier, *sp, wo, ray_division, pixel_sampling_data);
-					Rgb col_tmp = finalGathering(random_generator, correlative_sample_number, base_sampling_offset, thread_id, camera, chromatic_enabled, wavelength, aa_light_sample_multiplier, aa_indirect_sample_multiplier, *sp, wo, ray_division, pixel_sampling_data);
+					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
+					Rgb col_tmp = finalGathering(random_generator, correlative_sample_number, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 					if(aa_noise_params_.clamp_indirect_ > 0.f) col_tmp.clampProportionalRgb(aa_noise_params_.clamp_indirect_);
 					col += col_tmp;
 					if(color_layers && color_layers->getFlags().has(LayerDef::Flags::DiffuseLayers))
@@ -767,7 +765,7 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm &image_film, Ray &ra
 
 				if(mat_bsdfs.has(BsdfFlags::Diffuse))
 				{
-					col += estimateAllDirectLight(random_generator, color_layers, camera, chromatic_enabled, wavelength, aa_light_sample_multiplier, *sp, wo, ray_division, pixel_sampling_data);
+					col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 				}
 
 				auto *gathered = static_cast<FoundPhoton *>(alloca(params_.num_photons_diffuse_search_ * sizeof(FoundPhoton)));
@@ -803,13 +801,13 @@ std::pair<Rgb, float> PhotonIntegrator::integrate(ImageFilm &image_film, Ray &ra
 			col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
 		}
 
-		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
+		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(random_generator, correlative_sample_number, color_layers, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
+			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();

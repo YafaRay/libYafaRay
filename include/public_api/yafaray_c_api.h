@@ -139,7 +139,7 @@ extern "C" {
 	YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, yafaray_FilmHighlightAreaCallback callback, void *callback_data);
 	YAFARAY_C_API_EXPORT void yafaray_preprocessScene(yafaray_RenderControl *render_control, yafaray_Scene *scene, const yafaray_RenderMonitor *render_monitor);
 	YAFARAY_C_API_EXPORT void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene);
-	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, const yafaray_Scene *scene);
+	YAFARAY_C_API_EXPORT void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film);
 	YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map);
 	YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value);
 	YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);

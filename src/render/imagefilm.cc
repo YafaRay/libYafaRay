@@ -279,7 +279,7 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 	}
 }
 
-bool ImageFilm::render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator, const Scene &scene)
+bool ImageFilm::render(RenderControl &render_control, RenderMonitor &render_monitor, SurfaceIntegrator &surface_integrator)
 {
 	/*FIXME bool success = surface_integrator.preprocess(render_control, fast_random, scene);
 	if(!success)
@@ -290,7 +290,7 @@ bool ImageFilm::render(RenderControl &render_control, RenderMonitor &render_moni
 
 	//logger_.logInfo(getClassName(), " '", getName(), "': Shadow Bias=", shadow_bias_, (shadow_bias_auto_ ? " (auto)" : ""), ", Ray Min Dist=", ray_min_dist_, (ray_min_dist_auto_ ? " (auto)" : ""));
 	render_control.setStarted();
-	bool success = surface_integrator.render(render_control, render_monitor, *this, scene.getObjectIndexHighest(), scene.getMaterialIndexHighest());
+	bool success = surface_integrator.render(render_control, render_monitor, this);
 	if(!success)
 	{
 		logger_.logError(getClassName(), " '", getName(), "': Rendering process failed, exiting...");

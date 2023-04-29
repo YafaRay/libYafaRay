@@ -94,13 +94,11 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMoni
 	return success;
 }
 
-std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> DirectLightIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto base_sampling_offset{image_film.getBaseSamplingOffset()};
-	const auto camera{image_film.getCamera()};
-	const auto [sp, tmax] = accelerator_->intersect(ray, camera);
+	const auto [sp, tmax] = accelerator_->intersect(ray, image_film_->getCamera());
 	ray.tmax_ = tmax;
 	if(sp)
 	{
@@ -118,20 +116,20 @@ std::pair<Rgb, float> DirectLightIntegrator::integrate(ImageFilm &image_film, Ra
 		}
 		if(mat_bsdfs.has(BsdfFlags::Diffuse))
 		{
-			col += estimateAllDirectLight(random_generator, color_layers, camera, chromatic_enabled, wavelength, aa_light_sample_multiplier, *sp, wo, ray_division, pixel_sampling_data);
+			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 			if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 			{
 				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
 			}
-			if(MonteCarloIntegrator::params_.ao_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, camera, pixel_sampling_data, MonteCarloIntegrator::params_.transparent_shadows_, false, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
+			if(MonteCarloIntegrator::params_.ao_) col += sampleAmbientOcclusion(*accelerator_, chromatic_enabled, wavelength, *sp, wo, ray_division, image_film_->getCamera(), pixel_sampling_data, MonteCarloIntegrator::params_.transparent_shadows_, false, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 		}
-		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(image_film, random_generator, correlative_sample_number, color_layers, thread_id, ray_level + 1, chromatic_enabled, aa_light_sample_multiplier, aa_indirect_sample_multiplier, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
+		const auto [raytrace_col, raytrace_alpha]{recursiveRaytrace(random_generator, correlative_sample_number, color_layers, ray_level + 1, chromatic_enabled, wavelength, ray, mat_bsdfs, *sp, wo, additional_depth, ray_division, pixel_sampling_data)};
 		col += raytrace_col;
 		alpha = raytrace_alpha;
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera, pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
+			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();

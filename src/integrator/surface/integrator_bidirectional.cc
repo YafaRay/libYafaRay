@@ -212,7 +212,7 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, RenderMo
 		logger_.logDebug(getName(), ": preprocess(): lights: ", numLights(), " invIntegral:", light_power_d_->invIntegral());
 	}
 	//nPaths = 0;
-	//image_film.setDensityEstimation(true);
+	//image_film_->setDensityEstimation(true);
 	//lightImage->init();
 	// test...
 	/*
@@ -256,24 +256,23 @@ bool BidirectionalIntegrator::preprocess(RenderControl &render_control, RenderMo
 void BidirectionalIntegrator::cleanup(ImageFilm &image_film) const
 {
 	//	if(logger_.isDebug())logger_.logDebug(integratorName << ": " << "cleanup: flushing light image");
-	image_film.setNumDensitySamples(n_paths_); //dirty hack...
+	image_film_->setNumDensitySamples(n_paths_); //dirty hack...
 }
 
-bool BidirectionalIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest)
+bool BidirectionalIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film)
 {
-	image_film.setDensityEstimation(true);
-	return ParentClassType_t::render(render_control, render_monitor, image_film, object_index_highest, material_index_highest);
+	image_film_->setDensityEstimation(true);
+	return ParentClassType_t::render(render_control, render_monitor, image_film);
 }
 
 /* ============================================================
     integrate
  ============================================================ */
-std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier)
+std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data)
 {
 	Rgb col {0.f};
 	float alpha = 1.f;
-	const auto camera{image_film.getCamera()};
-	const auto [sp, tmax] = accelerator_->intersect(ray, camera); //FIXME: should we change directly ray.tmax_ here or not?
+	const auto [sp, tmax] = accelerator_->intersect(ray, image_film_->getCamera()); //FIXME: should we change directly ray.tmax_ here or not?
 	if(sp)
 	{
 		const Vec3f wo{-ray.dir_};
@@ -289,7 +288,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 		// temporary!
 		float cu, cv;
 		float cam_pdf = 0.0;
-		camera->project(ray, 0, 0, cu, cv, cam_pdf);
+		image_film_->getCamera()->project(ray, 0, 0, cu, cv, cam_pdf);
 		if(cam_pdf == 0.f) cam_pdf = 1.f; //FIXME: this is a horrible hack to fix the -nan problems when using bidirectional integrator with Architecture, Angular or Orto cameras. The fundamental problem is that the code for those 3 cameras LACK the member function project() and therefore leave the camPdf=0.f causing -nan results. So, for now I'm forcing camPdf = 1.f if such 0.f result comes from the non-existing member function. This is BAD, but at least will allow people to work with the different cameras in bidirectional, and bidirectional integrator still needs a LOT of work to make it a decent integrator anyway.
 		ve.pdf_wo_ = cam_pdf;
 		ve.f_s_ = Rgb(cam_pdf);
@@ -299,7 +298,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 		ve.pdf_wi_ = 1.f;
 		ve.flags_ = BsdfFlags::Diffuse; //place holder! not applicable for e.g. orthogonal camera!
 		// create eyePath
-		const int n_eye = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_, camera);
+		const int n_eye = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, ray, path_data.eye_path_, max_path_length_);
 		// sample light (todo!)
 		Ray lray;
 		lray.tmin_ = ray_min_dist_;
@@ -335,7 +334,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 		//FIXME: this does not make any sense: vl.flags_ = ls.flags_; //store light flags in BSDF flags...same purpose though, check if delta function are involved
 		path_data.singular_l_ = ls.flags_.has(Light::Flags::Singular);
 		// create lightPath
-		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_, camera);
+		const int n_light = createPath(random_generator, *accelerator_, chromatic_enabled, wavelength, lray, path_data.light_path_, max_path_length_);
 		if(n_light > 1)
 		{
 			path_data.pdf_illum_ = getLight(light_num)->illumPdf(path_data.light_path_[1].sp_.p_, vl.sp_.p_, vl.sp_.ng_) * light_num_pdf;
@@ -349,17 +348,17 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 		for(int s = 2; s <= n_light; ++s)
 		{
 			clearPath(path_data.path_, s, 1);
-			if(!connectPathE(path_data, s, camera)) continue;
+			if(!connectPathE(path_data, s)) continue;
 			checkPath(path_data.path_, s, 1);
 			float wt = pathWeight(s, 1, path_data);
 			if(wt > 0.f)
 			{
-				const Rgb li_col = evalPathE(*accelerator_, s, path_data, camera);
+				const Rgb li_col = evalPathE(*accelerator_, s, path_data);
 				if(li_col.isBlack()) continue;
 				float ix, idx, iy, idy;
 				idx = std::modf(path_data.u_, &ix);
 				idy = std::modf(path_data.v_, &iy);
-				image_film.addDensitySample(li_col, {{static_cast<int>(ix), static_cast<int>(iy)}}, idx, idy);
+				image_film_->addDensitySample(li_col, {{static_cast<int>(ix), static_cast<int>(iy)}}, idx, idy);
 			}
 		}
 #endif
@@ -390,7 +389,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 			{
 				checkPath(path_data.path_, 1, t);
 				const float wt = pathWeight(1, t, path_data);
-				if(wt > 0.f) col += wt * evalLPath(*accelerator_, t, path_data, d_ray, dcol, camera);
+				if(wt > 0.f) col += wt * evalLPath(*accelerator_, t, path_data, d_ray, dcol);
 			}
 			path_data.singular_l_ = o_singular_l;
 			path_data.pdf_illum_ = o_pdf_illum;
@@ -404,13 +403,13 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
 				if(!connectPaths(path_data, s, t)) continue;
 				checkPath(path_data.path_, s, t);
 				const float wt = pathWeight(s, t, path_data);
-				if(wt > 0.f) col += wt * evalPath(*accelerator_, s, t, path_data, camera);
+				if(wt > 0.f) col += wt * evalPath(*accelerator_, s, t, path_data);
 			}
 		}
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest, material_index_highest);
-			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, camera, pixel_sampling_data, *sp, wo, params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, params_.ao_distance_, params_.ao_color_, params_.shadow_depth_);
+			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, params_.ao_distance_, params_.ao_color_, params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{
 				const float col_combined_gray = col.col2Bri();
@@ -436,7 +435,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(ImageFilm &image_film, 
     important: resize path to maxLen *before* calling this function!
  ============================================================ */
 
-int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const
+int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len) const
 {
 	Ray ray {start, Ray::DifferentialsCopy::FullCopy};
 	// the 0th vertex has already been generated, which is ray.pos obviously
@@ -445,7 +444,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 	{
 		path.emplace_back();
 		PathVertex &v = path[n_vert];
-		const auto [sp, tmax] = accelerator_->intersect(ray, camera);
+		const auto [sp, tmax] = accelerator_->intersect(ray, image_film_->getCamera());
 		ray.tmax_ = tmax;
 		if(!sp) break;
 		v.sp_ = *sp;
@@ -461,7 +460,7 @@ int BidirectionalIntegrator::createPath(RandomGenerator &random_generator, const
 		// create tentative sample for next path segment
 		Sample s(random_generator(), random_generator(), BsdfFlags::All, true);
 		float w = 0.f;
-		v.f_s_ = v.sp_.sample(v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, camera);
+		v.f_s_ = v.sp_.sample(v.wi_, ray.dir_, s, w, chromatic_enabled, wavelength, image_film_->getCamera());
 		if(v.f_s_.isBlack()) break;
 		v.pdf_wo_ = s.pdf_;
 		v.cos_wo_ = w * s.pdf_;
@@ -668,7 +667,7 @@ std::tuple<bool, Ray, Rgb> BidirectionalIntegrator::connectLPath(PathData &pd, R
 }
 
 // connect path with t==1 (s>1)
-bool BidirectionalIntegrator::connectPathE(PathData &pd, int s, const Camera *camera) const
+bool BidirectionalIntegrator::connectPathE(PathData &pd, int s) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[0];
@@ -678,7 +677,7 @@ bool BidirectionalIntegrator::connectPathE(PathData &pd, int s, const Camera *ca
 	const float dist_2 = vec.normalizeAndReturnLengthSquared();
 	const float cos_y = std::abs(y.sp_.n_ * vec);
 	const Ray wo{z.sp_.p_, -vec, z.sp_.time_};
-	if(!camera->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
+	if(!image_film_->getCamera()->project(wo, 0, 0, pd.u_, pd.v_, x_e.pdf_b_)) return false;
 	x_e.specular_ = false; // cannot query yet...
 	x_l.pdf_f_ = y.sp_.pdf(y.wi_, vec, BsdfFlags::All); // light vert to eye vert
 	if(x_l.pdf_f_ < 1e-6f) return false;
@@ -827,7 +826,7 @@ float BidirectionalIntegrator::pathWeight0T(PathData &pd, int t) const
  ============================================================ */
 
 
-Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -838,7 +837,7 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, camera);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, image_film_->getCamera());
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
 	if(params_.transparent_shadows_) c_uw *= scol;
@@ -846,12 +845,12 @@ Rgb BidirectionalIntegrator::evalPath(const Accelerator &accelerator, int s, int
 }
 
 //===  eval paths with s==1 (direct lighting strategy)  ===//
-Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol) const
 {
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, params_.shadow_depth_, camera);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(l_ray, params_.shadow_depth_, image_film_->getCamera());
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(l_ray);
 	if(shadowed) return Rgb{0.f};
 	const PathVertex &z = pd.eye_path_[t - 1];
@@ -868,14 +867,14 @@ Rgb BidirectionalIntegrator::evalLPath(const Accelerator &accelerator, int t, co
 
 //=== eval path with t==1 (light path directly connected to eve vertex)
 //almost same as evalPath, just that there is no material on one end but a camera sensor function (soon...)
-Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const
+Rgb BidirectionalIntegrator::evalPathE(const Accelerator &accelerator, int s, const PathData &pd) const
 {
 	const PathVertex &y = pd.light_path_[s - 1];
 	const Ray con_ray{y.sp_.p_, pd.w_l_e_, y.sp_.time_, 0.0005f, pd.d_yz_};
 	bool shadowed = false;
 	Rgb scol {0.f};
 	const Primitive *shadow_casting_primitive = nullptr;
-	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, camera);
+	if(params_.transparent_shadows_) std::tie(shadowed, scol, shadow_casting_primitive) = accelerator_->isShadowedTransparentShadow(con_ray, params_.shadow_depth_, image_film_->getCamera());
 	else std::tie(shadowed, shadow_casting_primitive) = accelerator_->isShadowed(con_ray);
 	if(shadowed) return Rgb{0.f};
 	//eval material

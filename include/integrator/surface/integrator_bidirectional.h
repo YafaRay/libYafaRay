@@ -59,7 +59,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 			PARAM_DECL(bool, transparent_background_, false, "bg_transp", "Render background as transparent");
 			PARAM_DECL(bool, transparent_background_refraction_, false, "bg_transp_refract", "Render refractions of background as transparent");
 		} params_;
-		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm &image_film, unsigned int object_index_highest, unsigned int material_index_highest) override;
+		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film) override;
 		static constexpr inline int max_path_length_ = 32;
 		static constexpr inline int max_path_eval_length_ = 2 * max_path_length_ + 1;
 		static constexpr inline int min_path_length_ = 3;
@@ -68,13 +68,13 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathEvalVertex;
 		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
 		void cleanup(ImageFilm &image_film) const override;
-		std::pair<Rgb, float> integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) override;
-		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len, const Camera *camera) const;
-		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd, const Camera *camera) const;
-		Rgb evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol, const Camera *camera) const;
-		Rgb evalPathE(const Accelerator &accelerator, int s, const PathData &pd, const Camera *camera) const;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
+		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len) const;
+		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd) const;
+		Rgb evalLPath(const Accelerator &accelerator, int t, const PathData &pd, const Ray &l_ray, const Rgb &lcol) const;
+		Rgb evalPathE(const Accelerator &accelerator, int s, const PathData &pd) const;
 		std::tuple<bool, Ray, Rgb> connectLPath(PathData &pd, RandomGenerator &random_generator, bool chromatic_enabled, float wavelength, int t) const;
-		bool connectPathE(PathData &pd, int s, const Camera *camera) const;
+		bool connectPathE(PathData &pd, int s) const;
 		float pathWeight0T(PathData &pd, int t) const;
 		static void clearPath(std::vector<PathEvalVertex> &p, int s, int t);
 		static void checkPath(std::vector<PathEvalVertex> &p, int s, int t);

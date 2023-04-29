@@ -17,27 +17,34 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef YAFARAY_RENDER_DATA_H
-#define YAFARAY_RENDER_DATA_H
+#ifndef LIBYAFARAY_RENDER_DATA_H
+#define LIBYAFARAY_RENDER_DATA_H
 
 namespace yafaray {
 
 struct RayDivision final
 {
-	int division_ = 1; //!< keep track of trajectory splitting
-	int offset_ = 0; //!< keep track of trajectory splitting
-	float decorrelation_1_ = 0.f; //!< used to decorrelate samples from trajectory splitting*/
-	float decorrelation_2_ = 0.f; //!< used to decorrelate samples from trajectory splitting*/
+	int division_{1}; //!< keep track of trajectory splitting
+	int offset_{0}; //!< keep track of trajectory splitting
+	float decorrelation_1_{0.f}; //!< used to decorrelate samples from trajectory splitting*/
+	float decorrelation_2_{0.f}; //!< used to decorrelate samples from trajectory splitting*/
 };
 
 struct PixelSamplingData final
 {
-	int sample_ = 0; //!< number of samples inside this pixels so far
-	int number_ = 0;
-	unsigned int offset_ = 0; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
-	float time_ = 0.f;
+	PixelSamplingData(int thread_id, int number, unsigned int offset, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) :
+	thread_id_{thread_id}, number_{number}, offset_{offset},
+	aa_light_sample_multiplier_{aa_light_sample_multiplier},
+	aa_indirect_sample_multiplier_{aa_indirect_sample_multiplier} { }
+	int thread_id_{0};
+	int sample_{0}; //!< number of samples inside this pixels so far
+	int number_{0};
+	unsigned int offset_{0}; //!< a "noise-like" pixel offset you may use to decorelate sampling of adjacent pixel.
+	float aa_light_sample_multiplier_{1.f};
+	float aa_indirect_sample_multiplier_{1.f};
+	float time_{0.f};
 };
 
 } //namespace yafaray
 
-#endif //YAFARAY_RENDER_DATA_H
+#endif //LIBYAFARAY_RENDER_DATA_H

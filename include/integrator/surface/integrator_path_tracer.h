@@ -58,7 +58,7 @@ class PathIntegrator final : public CausticPhotonIntegrator
 			PARAM_ENUM_DECL(CausticType , caustic_type_, CausticType::Path, "caustic_type", "");
 		} params_;
 		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
-		std::pair<Rgb, float> integrate(ImageFilm &image_film, Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int thread_id, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data, unsigned int object_index_highest, unsigned int material_index_highest, float aa_light_sample_multiplier, float aa_indirect_sample_multiplier) override;
+		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 };
 
 } //namespace yafaray

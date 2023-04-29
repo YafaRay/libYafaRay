@@ -198,6 +198,8 @@ bool SurfaceIntegrator::preprocess(RenderControl &render_control, RenderMonitor 
 	background_ = scene.getBackground();
 	if(vol_integrator_) result = result && vol_integrator_->preprocess(scene, *this);
 	scene_bound_ = scene.getSceneBound();
+	object_index_highest_ = scene.getObjectIndexHighest();
+	material_index_highest_ = scene.getMaterialIndexHighest();
 	lights_map_filtered_ = getFilteredLights(scene, params_.light_names_);
 	lights_visible_ = getLightsVisible();
 	ray_differentials_enabled_ = scene.mipMapInterpolationRequired();
