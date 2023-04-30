@@ -221,10 +221,16 @@ yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char 
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
-void yafaray_preprocessScene(yafaray_RenderControl *render_control, yafaray_Scene *scene, const yafaray_RenderMonitor *render_monitor)
+yafaray_SceneModifiedFlags yafaray_checkAndClearSceneModifiedFlags(yafaray_Scene *scene)
 {
-	if(!render_control || !scene) return;
-	reinterpret_cast<yafaray::Scene *>(scene)->init(*reinterpret_cast<const yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::RenderControl *>(render_control));
+	if(!scene) return static_cast<yafaray_SceneModifiedFlags>(0);
+	else return reinterpret_cast<yafaray::Scene *>(scene)->checkAndClearSceneModifiedFlags();
+}
+
+yafaray_Bool yafaray_preprocessScene(yafaray_Scene *scene, const yafaray_RenderControl *render_control, yafaray_SceneModifiedFlags scene_modified_flags)
+{
+	if(!render_control || !scene) return YAFARAY_BOOL_FALSE;
+	return static_cast<yafaray_Bool>(reinterpret_cast<yafaray::Scene *>(scene)->preprocess(*reinterpret_cast<const yafaray::RenderControl *>(render_control), scene_modified_flags));
 }
 
 yafaray_ResultFlags yafaray_getImageId(yafaray_Scene *scene, const char *name, size_t *id_obtained)

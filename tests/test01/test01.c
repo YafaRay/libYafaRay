@@ -33,6 +33,7 @@ int main()
 	yafaray_Film *film = NULL;
 	yafaray_RenderControl *render_control = NULL;
 	yafaray_RenderMonitor *render_monitor = NULL;
+	yafaray_SceneModifiedFlags scene_modified_flags = 0;
 	size_t material_id = 0;
 	size_t object_id = 0;
 	size_t image_id = 0;
@@ -501,7 +502,8 @@ int main()
 	/* Rendering */
 	render_monitor = yafaray_createRenderMonitor(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	render_control = yafaray_createRenderControl();
-	yafaray_preprocessScene(render_control, scene, render_monitor);
+	scene_modified_flags = yafaray_checkAndClearSceneModifiedFlags(scene);
+	yafaray_preprocessScene(scene, render_control, scene_modified_flags);
 	yafaray_preprocessSurfaceIntegrator(render_control, render_monitor, surface_integrator, scene);
 	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_BOOL_FALSE, YAFARAY_BOOL_FALSE);
 	yafaray_destroyRenderControl(render_control);

@@ -269,89 +269,127 @@ bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float
 	return true;
 }
 
-bool Scene::init(const RenderMonitor &render_monitor, const RenderControl &render_control)
+yafaray_SceneModifiedFlags Scene::checkAndClearSceneModifiedFlags()
 {
-	std::vector<const Primitive *> primitives;
-	for(const auto &[object, object_name, object_enabled] : objects_)
+	int scene_modified_flags{0};
+	if(objects_.modified())
 	{
-		if(!object || !object_enabled || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
-		const auto object_primitives{object->getPrimitives()};
-		primitives.insert(primitives.end(), object_primitives.begin(), object_primitives.end());
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_OBJECTS;
+		objects_.clearModifiedList();
 	}
-	for(size_t instance_id = 0; instance_id < instances_.size(); ++instance_id)
+	if(lights_.modified())
 	{
-		//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
-		//if(object->isBaseObject()) continue; //FIXME
-		auto instance{instances_[instance_id].get()};
-		if(!instance) continue;
-		const bool instance_primitives_result{instance->updatePrimitives(*this)};
-		if(!instance_primitives_result)
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_LIGHTS;
+		lights_.clearModifiedList();
+	}
+	if(materials_.modified())
+	{
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_MATERIALS;
+		materials_.clearModifiedList();
+	}
+	if(textures_.modified())
+	{
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_TEXTURES;
+		textures_.clearModifiedList();
+	}
+	if(volume_regions_.modified())
+	{
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_VOLUME_REGIONS;
+		volume_regions_.clearModifiedList();
+	}
+	if(images_.modified())
+	{
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_IMAGES;
+		images_.clearModifiedList();
+	}
+	return static_cast<yafaray_SceneModifiedFlags>(scene_modified_flags);
+}
+
+bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifiedFlags scene_modified_flags)
+{
+	//if(!accelerator_) scene_modified_flags = static_cast<yafaray_SceneModifiedFlags>(YAFARAY_SCENE_MODIFIED_LIGHTS | YAFARAY_SCENE_MODIFIED_IMAGES | YAFARAY_SCENE_MODIFIED_TEXTURES | YAFARAY_SCENE_MODIFIED_MATERIALS | YAFARAY_SCENE_MODIFIED_OBJECTS | YAFARAY_SCENE_MODIFIED_VOLUME_REGIONS);
+	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_OBJECTS)
+	{
+		std::vector<const Primitive *> primitives;
+		for(const auto &[object, object_name, object_enabled]: objects_)
 		{
-			logger_.logWarning(getClassName(), " '", getName(), "': Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
-			continue;
+			if(!object || !object_enabled || object->getVisibility() == Visibility::None || object->isBaseObject()) continue;
+			const auto object_primitives{object->getPrimitives()};
+			primitives.insert(primitives.end(), object_primitives.begin(), object_primitives.end());
 		}
-		const auto instance_primitives{instance->getPrimitives()};
-		primitives.insert(primitives.end(), instance_primitives.begin(), instance_primitives.end());
-	}
-	if(primitives.empty())
-	{
-		logger_.logWarning(getClassName(), " '", getName(), "': Scene is empty...");
-	}
-	for(auto &texture : textures_)
-	{
-		texture.item_->updateMipMaps();
-	}
-	ParamMap params;
-	params["type"] = scene_accelerator_;
-	params["accelerator_threads"] = getNumThreads();
-
-	accelerator_ = Accelerator::factory(logger_, &render_control, primitives, params).first;
-	*scene_bound_ = accelerator_->getBound();
-	if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
-
-	object_index_highest_ = 1;
-	for(const auto &[object, object_name, object_enabled] : objects_)
-	{
-		if(object_index_highest_ < object->getPassIndex()) object_index_highest_ = object->getPassIndex();
-		object->setLight(math::invalid<size_t>);
-	}
-
-	material_index_highest_ = 1;
-	for(size_t material_id = 0; material_id < materials_.size(); ++material_id)
-	{
-		const int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
-		if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
-	}
-
-	logger_.logInfo(getClassName(), " '", getName(), "': total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
-
-	mipmap_interpolation_required_ = false;
-	for(size_t texture_id = 0; texture_id < textures_.size(); ++texture_id)
-	{
-		const InterpolationType texture_interpolation_type{textures_.getById(texture_id).first->getInterpolationType()};
-		if(texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa)
+		for(size_t instance_id = 0; instance_id < instances_.size(); ++instance_id)
 		{
-			if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': At least one texture using mipmaps interpolation, ray differentials will be enabled.");
-			mipmap_interpolation_required_ = true;
-			break;
+			//if(object->getVisibility() == Visibility::Invisible) continue; //FIXME
+			//if(object->isBaseObject()) continue; //FIXME
+			auto instance{instances_[instance_id].get()};
+			if(!instance) continue;
+			const bool instance_primitives_result{instance->updatePrimitives(*this)};
+			if(!instance_primitives_result)
+			{
+				logger_.logWarning(getClassName(), " '", getName(), "': Instance id=", instance_id, " could not update primitives, maybe recursion problem...");
+				continue;
+			}
+			const auto instance_primitives{instance->getPrimitives()};
+			primitives.insert(primitives.end(), instance_primitives.begin(), instance_primitives.end());
 		}
-	}
-
-	for(auto &[light, light_name, light_enabled] : lights_)
-	{
-		if(light && light_enabled)
+		if(primitives.empty())
 		{
-			const size_t object_id{light->init(*this)};
-			if(object_id != math::invalid<size_t>) objects_.getById(object_id).first->setLight(light->getId());
+			logger_.logWarning(getClassName(), " '", getName(), "': Scene is empty...");
+		}
+		for(auto &texture: textures_)
+		{
+			texture.item_->updateMipMaps();
+		}
+		ParamMap params;
+		params["type"] = scene_accelerator_;
+		params["accelerator_threads"] = getNumThreads();
+
+		accelerator_ = Accelerator::factory(logger_, &render_control, primitives, params).first;
+		*scene_bound_ = accelerator_->getBound();
+		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
+
+		object_index_highest_ = 1;
+		for(const auto &[object, object_name, object_enabled]: objects_)
+		{
+			if(object_index_highest_ < object->getPassIndex()) object_index_highest_ = object->getPassIndex();
+			object->setLight(math::invalid<size_t>);
 		}
 	}
 
-	objects_.clearModifiedList();
-	lights_.clearModifiedList();
-	materials_.clearModifiedList();
-	textures_.clearModifiedList();
-	volume_regions_.clearModifiedList();
-	images_.clearModifiedList();
+	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_MATERIALS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_TEXTURES || scene_modified_flags & YAFARAY_SCENE_MODIFIED_IMAGES)
+	{
+		material_index_highest_ = 1;
+		for(size_t material_id = 0; material_id < materials_.size(); ++material_id)
+		{
+			const int material_pass_index{materials_.getById(material_id).first->getPassIndex()};
+			if(material_index_highest_ < material_pass_index) material_index_highest_ = material_pass_index;
+		}
+
+		logger_.logInfo(getClassName(), " '", getName(), "': total scene dimensions: X=", scene_bound_->length(Axis::X), ", y=", scene_bound_->length(Axis::Y), ", z=", scene_bound_->length(Axis::Z), ", volume=", scene_bound_->vol());
+
+		mipmap_interpolation_required_ = false;
+		for(size_t texture_id = 0; texture_id < textures_.size(); ++texture_id)
+		{
+			const InterpolationType texture_interpolation_type{textures_.getById(texture_id).first->getInterpolationType()};
+			if(texture_interpolation_type == InterpolationType::Trilinear || texture_interpolation_type == InterpolationType::Ewa)
+			{
+				if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': At least one texture using mipmaps interpolation, ray differentials will be enabled.");
+				mipmap_interpolation_required_ = true;
+				break;
+			}
+		}
+	}
+	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_LIGHTS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_TEXTURES || scene_modified_flags & YAFARAY_SCENE_MODIFIED_IMAGES)
+	{
+		for(auto &[light, light_name, light_enabled]: lights_)
+		{
+			if(light && light_enabled)
+			{
+				const size_t object_id{light->init(*this)};
+				if(object_id != math::invalid<size_t>) objects_.getById(object_id).first->setLight(light->getId());
+			}
+		}
+	}
 	return true;
 }
 
