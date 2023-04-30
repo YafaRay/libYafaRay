@@ -52,7 +52,7 @@ yafaray_RenderControl *render_control = NULL;
 BOOL WINAPI ctrlCHandler_global(DWORD signal)
 {
 	yafaray_printWarning(logger, "CTRL+C pressed, cancelling.\n");
-	if(film)
+	if(render_control)
 	{
 		yafaray_cancelRendering(render_control);
 		return TRUE;
