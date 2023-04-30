@@ -225,7 +225,6 @@ class ImageFilm final
 		std::atomic<int> next_area_;
 		int area_cnt_{0}, completed_cnt_{0};
 		bool split_ = true;
-		bool cancel_ = false;
 		int sampling_offset_{0}; //To ensure sampling after loading the image film continues and does not repeat already done samples
 		bool estimate_density_ = false;
 		int num_density_samples_ = 0;

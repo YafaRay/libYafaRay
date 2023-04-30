@@ -252,7 +252,6 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 
 	render_monitor.initProgressBar(params_.width_ * params_.height_, logger_.getConsoleLogColorsEnabled());
 
-	cancel_ = false;
 	completed_cnt_ = 0;
 	n_pass_ = 1;
 
@@ -465,10 +464,7 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 
 bool ImageFilm::nextArea(RenderArea &a)
 {
-	if(cancel_) return false;
-
 	const int ifilterw = static_cast<int>(std::ceil(filter_width_));
-
 	if(split_)
 	{
 		const int n = next_area_++;
