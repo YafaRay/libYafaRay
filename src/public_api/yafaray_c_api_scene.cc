@@ -163,25 +163,25 @@ yafaray_Bool yafaray_addInstanceMatrixArray(yafaray_Scene *scene, size_t instanc
 
 yafaray_ResultFlags yafaray_getObjectId(yafaray_Scene *scene, size_t *id_obtained, const char *name)
 {
-	if(!scene || !id_obtained || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto [object, object_id, object_result]{reinterpret_cast<yafaray::Scene *>(scene)->getObject(name)};
-	*id_obtained = object_id;
+	if(id_obtained) *id_obtained = object_id;
 	return static_cast<yafaray_ResultFlags>(object_result.value());
 }
 
 yafaray_ResultFlags yafaray_getMaterialId(yafaray_Scene *scene, size_t *id_obtained, const char *name)
 {
-	if(!scene || !id_obtained || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto [material_id, material_result]{reinterpret_cast<yafaray::Scene *>(scene)->getMaterial(name)};
-	*id_obtained = material_id;
+	if(id_obtained) *id_obtained = material_id;
 	return static_cast<yafaray_ResultFlags>(material_result.value());
 }
 
 yafaray_ResultFlags yafaray_createObject(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map)
 {
-	if(!scene || !id_obtained || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createObject(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
-	*id_obtained = creation_result.first;
+	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
@@ -201,9 +201,9 @@ yafaray_ResultFlags yafaray_createTexture(yafaray_Scene *scene, const char *name
 
 yafaray_ResultFlags yafaray_createMaterial(yafaray_Scene *scene, size_t *id_obtained, const char *name, const yafaray_ParamMap *param_map, const yafaray_ParamMapList *param_map_list_nodes)
 {
-	if(!scene || !id_obtained || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createMaterial(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map), *reinterpret_cast<const std::list<yafaray::ParamMap> *>(param_map_list_nodes))};
-	*id_obtained = creation_result.first;
+	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
@@ -235,17 +235,17 @@ yafaray_Bool yafaray_preprocessScene(yafaray_Scene *scene, const yafaray_RenderC
 
 yafaray_ResultFlags yafaray_getImageId(yafaray_Scene *scene, const char *name, size_t *id_obtained)
 {
-	if(!scene || !name || !id_obtained) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto [image, image_id, image_result]{reinterpret_cast<yafaray::Scene *>(scene)->getImage(name)};
-	*id_obtained = image_id;
+	if(id_obtained) *id_obtained = image_id;
 	return static_cast<yafaray_ResultFlags>(image_result.value());
 }
 
 yafaray_ResultFlags yafaray_createImage(yafaray_Scene *scene, const char *name, size_t *id_obtained, const yafaray_ParamMap *param_map)
 {
-	if(!scene || !name || !id_obtained || !param_map) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	if(!scene || !name || !param_map) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
 	auto creation_result{reinterpret_cast<yafaray::Scene *>(scene)->createImage(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
-	*id_obtained = creation_result.first;
+	if(id_obtained) *id_obtained = creation_result.first;
 	return static_cast<yafaray_ResultFlags>(creation_result.second.flags_.value());
 }
 
