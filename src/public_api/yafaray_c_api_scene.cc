@@ -17,20 +17,11 @@
  */
 
 #include "public_api/yafaray_c_api.h"
-#include "color/color.h"
-#include "common/logger.h"
-#include "common/version_build_info.h"
+#include "scene/scene.h"
 #include "geometry/matrix.h"
 #include "geometry/primitive/face_indices.h"
-#include "math/math.h"
-#include "render/progress_bar.h"
-#include "scene/scene.h"
-#include "param/param.h"
-#include "integrator/surface/integrator_surface.h"
-#include "render/imagefilm.h"
-#include "render/render_control.h"
-#include "render/render_monitor.h"
-#include <cstring>
+#include "param/param_result.h"
+#include "color/color.h"
 
 yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map)
 {
