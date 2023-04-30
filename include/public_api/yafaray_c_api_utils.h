@@ -1,4 +1,3 @@
-#pragma once
 /****************************************************************************
  *      This is part of the libYafaRay package
  *
@@ -17,21 +16,17 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef LIBYAFARAY_VERTEX_INDICES_H
-#define LIBYAFARAY_VERTEX_INDICES_H
+#ifndef LIBYAFARAY_YAFARAY_C_API_UTILS_H
+#define LIBYAFARAY_YAFARAY_C_API_UTILS_H
 
-#include "math/math.h"
+#include <string>
+#include <cstring>
 
-namespace yafaray {
-
-template <typename IndexType>
-struct VertexIndices
+inline char *createCharString(const std::string &std_string)
 {
-	IndexType vertex_{math::invalid<IndexType>}; //!< index in point array, referenced in mesh.
-	IndexType normal_{math::invalid<IndexType>}; //!< index in normal array, if mesh is smoothed.//!< indices in normal array, if mesh is smoothed.
-	IndexType uv_{math::invalid<IndexType>}; //!< index in uv array, if mesh has explicit uv.
-};
+	auto c_string{new char[std_string.size() + 1]};
+	std::strcpy(c_string, std_string.c_str());
+	return c_string;
+}
 
-} //namespace yafaray
-
-#endif //LIBYAFARAY_VERTEX_INDICES_H
+#endif //LIBYAFARAY_YAFARAY_C_API_UTILS_H

@@ -18,5 +18,13 @@
 
 target_sources(libyafaray4
 	PRIVATE
-		yafaray_c_api.cc
+		yafaray_c_api_film.cc
+		yafaray_c_api_general.cc
+		yafaray_c_api_logger.cc
+		yafaray_c_api_param_map.cc
+		yafaray_c_api_param_map_list.cc
+		yafaray_c_api_render_control.cc
+		yafaray_c_api_render_monitor.cc
+		yafaray_c_api_scene.cc
+		yafaray_c_api_surface_integrator.cc
 )
