@@ -273,7 +273,7 @@ int main(void)
 	scene_modified_flags = yafaray_checkAndClearSceneModifiedFlags(scene);
 	yafaray_preprocessScene(scene, render_control, scene_modified_flags);
 	yafaray_preprocessSurfaceIntegrator(render_control, render_monitor, surface_integrator, scene);
-	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_BOOL_FALSE, YAFARAY_BOOL_FALSE);
+	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_RENDER_NORMAL);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray_destroyRenderControl(render_control);
 	yafaray_destroyRenderMonitor(render_monitor);

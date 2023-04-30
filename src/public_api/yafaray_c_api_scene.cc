@@ -223,7 +223,7 @@ yafaray_ResultFlags yafaray_createVolumeRegion(yafaray_Scene *scene, const char 
 
 yafaray_SceneModifiedFlags yafaray_checkAndClearSceneModifiedFlags(yafaray_Scene *scene)
 {
-	if(!scene) return static_cast<yafaray_SceneModifiedFlags>(0);
+	if(!scene) return YAFARAY_SCENE_MODIFIED_NOTHING;
 	else return reinterpret_cast<yafaray::Scene *>(scene)->checkAndClearSceneModifiedFlags();
 }
 

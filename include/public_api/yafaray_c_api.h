@@ -42,9 +42,11 @@ typedef struct yafaray_Film yafaray_Film;
 typedef enum { YAFARAY_LOG_LEVEL_MUTE = 0, YAFARAY_LOG_LEVEL_ERROR, YAFARAY_LOG_LEVEL_WARNING, YAFARAY_LOG_LEVEL_PARAMS, YAFARAY_LOG_LEVEL_INFO, YAFARAY_LOG_LEVEL_VERBOSE, YAFARAY_LOG_LEVEL_DEBUG } yafaray_LogLevel;
 typedef enum { YAFARAY_DISPLAY_CONSOLE_HIDDEN, YAFARAY_DISPLAY_CONSOLE_NORMAL } yafaray_DisplayConsole;
 typedef enum { YAFARAY_INTERFACE_FOR_RENDERING, YAFARAY_INTERFACE_EXPORT_XML, YAFARAY_INTERFACE_EXPORT_C, YAFARAY_INTERFACE_EXPORT_PYTHON } yafaray_InterfaceType;
+typedef enum { YAFARAY_RENDER_NORMAL, YAFARAY_RENDER_PROGRESSIVE, YAFARAY_RENDER_RESUME } yafaray_RenderMode;
 typedef enum { YAFARAY_BOOL_FALSE = 0, YAFARAY_BOOL_TRUE = 1 } yafaray_Bool;
 typedef enum
 {
+	YAFARAY_SCENE_MODIFIED_NOTHING = 0,
 	YAFARAY_SCENE_MODIFIED_OBJECTS = 1 << 0,
 	YAFARAY_SCENE_MODIFIED_LIGHTS = 1 << 1,
 	YAFARAY_SCENE_MODIFIED_MATERIALS = 1 << 2,
@@ -139,7 +141,7 @@ YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(
 YAFARAY_C_API_EXPORT void yafaray_destroySurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator);
 YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 YAFARAY_C_API_EXPORT void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene);
-YAFARAY_C_API_EXPORT void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, yafaray_Bool resume, yafaray_Bool progressive);
+YAFARAY_C_API_EXPORT void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, yafaray_RenderMode render_mode);
 
 /* Film functions */
 YAFARAY_C_API_EXPORT yafaray_Film *yafaray_createFilm(yafaray_Logger *logger, yafaray_SurfaceIntegrator *surface_integrator, const char *name, const yafaray_ParamMap *param_map);

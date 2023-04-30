@@ -310,15 +310,15 @@ int SurfaceIntegrator::setNumThreads(int threads)
 	return result;
 }
 
-bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, bool resume, bool progressive)
+bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, yafaray_RenderMode render_mode)
 {
 	if(!image_film) return false;
 	image_film_ = image_film;
-	if(resume) render_control.setResumed();
+	if(render_mode == YAFARAY_RENDER_RESUME) render_control.setResumed();
 	else
 	{
 		render_control.setStarted();
-		if(progressive) render_control.setProgressive();
+		if(render_mode == YAFARAY_RENDER_PROGRESSIVE) render_control.setProgressive();
 	}
 	const bool success = render(render_control, render_monitor);
 	if(!success)

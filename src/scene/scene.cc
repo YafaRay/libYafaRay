@@ -271,8 +271,8 @@ bool Scene::addInstanceMatrix(size_t instance_id, Matrix4f &&obj_to_world, float
 
 yafaray_SceneModifiedFlags Scene::checkAndClearSceneModifiedFlags()
 {
-	int scene_modified_flags{0};
-	if(objects_.modified())
+	int scene_modified_flags{YAFARAY_SCENE_MODIFIED_NOTHING};
+	if(objects_.modified()) //FIXME: INSTANCES MODIFIED????
 	{
 		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_OBJECTS;
 		objects_.clearModifiedList();
@@ -336,10 +336,6 @@ bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifie
 		{
 			logger_.logWarning(getClassName(), " '", getName(), "': Scene is empty...");
 		}
-		for(auto &texture: textures_)
-		{
-			texture.item_->updateMipMaps();
-		}
 		ParamMap params;
 		params["type"] = scene_accelerator_;
 		params["accelerator_threads"] = getNumThreads();
@@ -358,6 +354,10 @@ bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifie
 
 	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_MATERIALS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_TEXTURES || scene_modified_flags & YAFARAY_SCENE_MODIFIED_IMAGES)
 	{
+		for(auto &texture: textures_)
+		{
+			texture.item_->updateMipMaps();
+		}
 		material_index_highest_ = 1;
 		for(size_t material_id = 0; material_id < materials_.size(); ++material_id)
 		{
@@ -379,7 +379,7 @@ bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifie
 			}
 		}
 	}
-	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_LIGHTS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_TEXTURES || scene_modified_flags & YAFARAY_SCENE_MODIFIED_IMAGES)
+	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_LIGHTS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_OBJECTS || scene_modified_flags & YAFARAY_SCENE_MODIFIED_TEXTURES || scene_modified_flags & YAFARAY_SCENE_MODIFIED_IMAGES)
 	{
 		for(auto &[light, light_name, light_enabled]: lights_)
 		{

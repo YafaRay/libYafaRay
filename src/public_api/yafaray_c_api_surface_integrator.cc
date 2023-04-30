@@ -40,12 +40,12 @@ yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *su
 
 void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene)
 {
-	if(!render_control || !surface_integrator || !scene) return;
+	if(!render_control || !render_monitor || !surface_integrator || !scene) return;
 	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
-void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, yafaray_Bool resume, yafaray_Bool progressive)
+void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, yafaray_RenderMode render_mode)
 {
-	if(!render_control || !surface_integrator || !film) return;
-	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), reinterpret_cast<yafaray::ImageFilm *>(film), (resume == YAFARAY_BOOL_TRUE), false);
+	if(!render_control || !render_monitor || !surface_integrator || !film) return;
+	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), reinterpret_cast<yafaray::ImageFilm *>(film), render_mode);
 }
