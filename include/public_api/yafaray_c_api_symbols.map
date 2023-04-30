@@ -2,25 +2,104 @@
 
 LIBYAFARAY_4.0.0 {
     global:
-        yafaray_createLogger;
-        yafaray_setLoggerCallbacks;
-        yafaray_destroyLogger;
+        # General / version functions
+        yafaray_getVersionMajor;
+        yafaray_getVersionMinor;
+        yafaray_getVersionPatch;
+        yafaray_getVersionString;
+        yafaray_destroyCharString;
+
+        # Render Control functions
         yafaray_createRenderControl;
         yafaray_destroyRenderControl;
+        yafaray_cancelRendering;
+
+        # Render Monitor functions
         yafaray_createRenderMonitor;
         yafaray_destroyRenderMonitor;
-        yafaray_createFilm;
-        yafaray_destroyFilm;
-        yafaray_createScene;
-        yafaray_destroyScene;
+
+        # Parameter Map functions
         yafaray_createParamMap;
         yafaray_destroyParamMap;
+        yafaray_setParamMapVector;
+        yafaray_setParamMapString;
+        yafaray_setParamMapBool;
+        yafaray_setParamMapInt;
+        yafaray_setParamMapFloat;
+        yafaray_setParamMapColor;
+        yafaray_setParamMapMatrix;
+        yafaray_setParamMapMatrixArray;
+        yafaray_clearParamMap;
+        yafaray_setInputColorSpace;
+
+        # Parameter Map List functions, for material shader nodes
         yafaray_createParamMapList;
         yafaray_destroyParamMapList;
+        yafaray_addParamMapToList;
+        yafaray_clearParamMapList;
+
+        # Logger functions
+        yafaray_createLogger;
+        yafaray_destroyLogger;
+        yafaray_enablePrintDateTime;
+        yafaray_setConsoleVerbosityLevel;
+        yafaray_setLogVerbosityLevel;
+        yafaray_logLevelFromString;
+        yafaray_printDebug;
+        yafaray_printVerbose;
+        yafaray_printInfo;
+        yafaray_printParams;
+        yafaray_printWarning;
+        yafaray_printError;
+        yafaray_setConsoleLogColorsEnabled;
+        yafaray_setLoggerCallbacks;
+
+        # Surface Integrator functions
         yafaray_createSurfaceIntegrator;
         yafaray_destroySurfaceIntegrator;
+        yafaray_defineVolumeIntegrator;
+        yafaray_preprocessSurfaceIntegrator;
+        yafaray_render;
+
+        # Film functions
+        yafaray_createFilm;
+        yafaray_destroyFilm;
         yafaray_getFilmWidth;
         yafaray_getFilmHeight;
+        yafaray_defineCamera;
+        yafaray_createOutput;
+        yafaray_defineLayer;
+        yafaray_getLayersTable;
+        yafaray_setNotifyLayerCallback;
+        yafaray_setPutPixelCallback;
+        yafaray_setHighlightPixelCallback;
+        yafaray_setFlushAreaCallback;
+        yafaray_setFlushCallback;
+        yafaray_setHighlightAreaCallback;
+
+
+        # Scene functions
+        yafaray_createScene;
+        yafaray_destroyScene;
+        yafaray_preprocessScene;
+        yafaray_getMaterialId;
+        yafaray_createLight;
+        yafaray_createTexture;
+        yafaray_createMaterial;
+        yafaray_defineBackground;
+        yafaray_createVolumeRegion;
+
+        # Scene images
+        yafaray_createImage;
+        yafaray_getImageId;
+        yafaray_setImageColor;
+        yafaray_getImageColor;
+        yafaray_getImageWidth;
+        yafaray_getImageHeight;
+
+        # Scene objects
+        yafaray_createObject;
+        yafaray_getObjectId;
         yafaray_initObject;
         yafaray_addVertex;
         yafaray_addVertexTimeStep;
@@ -34,68 +113,13 @@ LIBYAFARAY_4.0.0 {
         yafaray_addQuadWithUv;
         yafaray_addUv;
         yafaray_smoothObjectMesh;
+
+        # Scene instances
         yafaray_createInstance;
         yafaray_addInstanceObject;
         yafaray_addInstanceOfInstance;
         yafaray_addInstanceMatrix;
         yafaray_addInstanceMatrixArray;
-        yafaray_setParamMapVector;
-        yafaray_setParamMapString;
-        yafaray_setParamMapBool;
-        yafaray_setParamMapInt;
-        yafaray_setParamMapFloat;
-        yafaray_setParamMapColor;
-        yafaray_setParamMapMatrix;
-        yafaray_setParamMapMatrixArray;
-        yafaray_clearParamMap;
-        yafaray_addParamMapToList;
-        yafaray_clearParamMapList;
-        yafaray_getObjectId;
-        yafaray_getMaterialId;
-        yafaray_createObject;
-        yafaray_createLight;
-        yafaray_createTexture;
-        yafaray_createMaterial;
-        yafaray_defineCamera;
-        yafaray_defineBackground;
-        yafaray_defineVolumeIntegrator;
-        yafaray_createVolumeRegion;
-        yafaray_createOutput;
-        yafaray_setNotifyLayerCallback;
-        yafaray_setPutPixelCallback;
-        yafaray_setHighlightPixelCallback;
-        yafaray_setFlushAreaCallback;
-        yafaray_setFlushCallback;
-        yafaray_setHighlightAreaCallback;
-        yafaray_preprocessScene;
-        yafaray_preprocessSurfaceIntegrator;
-        yafaray_render;
-        yafaray_defineLayer;
-        yafaray_enablePrintDateTime;
-        yafaray_setConsoleVerbosityLevel;
-        yafaray_setLogVerbosityLevel;
-        yafaray_logLevelFromString;
-        yafaray_printDebug;
-        yafaray_printVerbose;
-        yafaray_printInfo;
-        yafaray_printParams;
-        yafaray_printWarning;
-        yafaray_printError;
-        yafaray_cancelRendering;
-        yafaray_setInputColorSpace;
-        yafaray_getImageId;
-        yafaray_createImage;
-        yafaray_setImageColor;
-        yafaray_getImageColor;
-        yafaray_getImageWidth;
-        yafaray_getImageHeight;
-        yafaray_setConsoleLogColorsEnabled;
-        yafaray_getVersionMajor;
-        yafaray_getVersionMinor;
-        yafaray_getVersionPatch;
-        yafaray_getVersionString;
-        yafaray_getLayersTable;
-        yafaray_destroyCharString;
 
     local:
         *;
