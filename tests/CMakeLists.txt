@@ -18,7 +18,7 @@
 
 add_subdirectory(test00)
 add_subdirectory(test01)
-#add_subdirectory(test02)
+add_subdirectory(test02)
 #add_subdirectory(test03)
 #add_subdirectory(test04)
 #add_subdirectory(test05)
