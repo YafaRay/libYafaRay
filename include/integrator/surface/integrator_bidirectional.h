@@ -66,7 +66,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 		struct PathData;
 		struct PathVertex;
 		struct PathEvalVertex;
-		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
+		bool preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 		int createPath(RandomGenerator &random_generator, const Accelerator &accelerator, bool chromatic_enabled, float wavelength, const Ray &start, std::vector<PathVertex> &path, int max_len) const;
 		Rgb evalPath(const Accelerator &accelerator, int s, int t, const PathData &pd) const;

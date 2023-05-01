@@ -52,9 +52,9 @@ DirectLightIntegrator::DirectLightIntegrator(Logger &logger, ParamResult &param_
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
+bool DirectLightIntegrator::preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
+	bool success = SurfaceIntegrator::preprocess(render_monitor, render_control, scene);
 	std::stringstream set;
 
 	render_monitor.addTimerEvent("prepass");
@@ -75,7 +75,7 @@ bool DirectLightIntegrator::preprocess(RenderControl &render_control, RenderMoni
 
 	if(CausticPhotonIntegrator::params_.use_photon_caustics_)
 	{
-		success = success && createCausticMap(render_control, render_monitor);
+		success = success && createCausticMap(render_monitor, render_control);
 		set << "\nCaustic photons=" << n_caus_photons_ << " search=" << CausticPhotonIntegrator::params_.n_caus_search_ << " radius=" << CausticPhotonIntegrator::params_.caus_radius_ << " depth=" << CausticPhotonIntegrator::params_.caus_depth_ << "  ";
 	}
 

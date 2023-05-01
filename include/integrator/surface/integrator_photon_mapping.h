@@ -72,12 +72,12 @@ class PhotonIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(float, gather_dist_, 0.2f, "fg_min_pathlen", "Minimum distance to terminate path tracing (unless gatherBounces is reached). If not specified it defaults to the value set in '" + diffuse_radius_meta_.name() + "'");
 			PARAM_DECL(bool, show_map_, false, "show_map", "Show radiance map");
 		} params_;
-		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
+		bool preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
-		void diffuseWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
+		void diffuseWorker(RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, const RenderControl &render_control, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step);
 		Rgb finalGathering(RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, bool chromatic_enabled, float wavelength, const SurfacePoint &sp, const Vec3f &wo, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data);
 		void enableDiffuse(const bool diffuse) { use_photon_diffuse_ = diffuse; }
-		static void preGatherWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData *gdata, float ds_rad, int n_search);
+		static void preGatherWorker(RenderMonitor &render_monitor, PreGatherData *gdata, const RenderControl &render_control, float ds_rad, int n_search);
 		static void photonMapKdTreeWorker(PhotonMap *photon_map, const RenderMonitor &render_monitor, const RenderControl &render_control);
 		PhotonMap *getDiffuseMap() { return diffuse_map_.get(); }
 		const PhotonMap *getDiffuseMap() const { return diffuse_map_.get(); }

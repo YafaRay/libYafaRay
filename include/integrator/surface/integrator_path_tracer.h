@@ -57,7 +57,7 @@ class PathIntegrator final : public CausticPhotonIntegrator
 			PARAM_DECL(bool, no_recursive_, false, "no_recursive", "");
 			PARAM_ENUM_DECL(CausticType , caustic_type_, CausticType::Path, "caustic_type", "");
 		} params_;
-		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
+		bool preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 };
 

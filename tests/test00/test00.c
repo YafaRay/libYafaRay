@@ -76,7 +76,7 @@ int main(void)
 	yafaray_SurfaceIntegrator *surface_integrator = NULL;
 	yafaray_Film *film = NULL;
 	yafaray_RenderMonitor *render_monitor = NULL;
-	yafaray_SceneModifiedFlags scene_modified_flags = 0;
+	yafaray_SceneModifiedFlags scene_modified_flags = YAFARAY_SCENE_MODIFIED_NOTHING;
 	FILE *fp = NULL;
 	size_t material_id = 0;
 	size_t object_id = 0;
@@ -272,9 +272,10 @@ int main(void)
 	render_monitor = yafaray_createRenderMonitor(monitorCallback, &total_steps, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	render_control = yafaray_createRenderControl();
 	scene_modified_flags = yafaray_checkAndClearSceneModifiedFlags(scene);
+	yafaray_setRenderControlForNormalStart(render_control);
 	yafaray_preprocessScene(scene, render_control, scene_modified_flags);
-	yafaray_preprocessSurfaceIntegrator(render_control, render_monitor, surface_integrator, scene);
-	yafaray_render(render_control, render_monitor, surface_integrator, film, YAFARAY_RENDER_NORMAL);
+	yafaray_preprocessSurfaceIntegrator(render_monitor, surface_integrator, render_control, scene);
+	yafaray_render(render_control, render_monitor, surface_integrator, film);
 	printf("END: total_steps = %d\n", total_steps);
 	yafaray_destroyRenderControl(render_control);
 	yafaray_destroyRenderMonitor(render_monitor);

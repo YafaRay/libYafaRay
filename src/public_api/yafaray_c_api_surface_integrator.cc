@@ -38,14 +38,14 @@ yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *su
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 
-void yafaray_preprocessSurfaceIntegrator(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene)
+void yafaray_preprocessSurfaceIntegrator(yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, const yafaray_RenderControl *render_control, const yafaray_Scene *scene)
 {
 	if(!render_control || !render_monitor || !surface_integrator || !scene) return;
-	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::Scene *>(scene));
+	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->preprocess(*reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), *reinterpret_cast<const yafaray::RenderControl *>(render_control), *reinterpret_cast<const yafaray::Scene *>(scene));
 }
 
-void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film, yafaray_RenderMode render_mode)
+void yafaray_render(yafaray_RenderControl *render_control, yafaray_RenderMonitor *render_monitor, yafaray_SurfaceIntegrator *surface_integrator, yafaray_Film *film)
 {
 	if(!render_control || !render_monitor || !surface_integrator || !film) return;
-	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), reinterpret_cast<yafaray::ImageFilm *>(film), render_mode);
+	reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator)->render(*reinterpret_cast<yafaray::RenderControl *>(render_control), *reinterpret_cast<yafaray::RenderMonitor *>(render_monitor), reinterpret_cast<yafaray::ImageFilm *>(film));
 }

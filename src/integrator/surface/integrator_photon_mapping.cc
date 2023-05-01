@@ -95,7 +95,7 @@ std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> PhotonIntegrator::fac
 	return {std::move(integrator), param_result};
 }
 
-void PhotonIntegrator::preGatherWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData *gdata, float ds_rad, int n_search)
+void PhotonIntegrator::preGatherWorker(RenderMonitor &render_monitor, PreGatherData *gdata, const RenderControl &render_control, float ds_rad, int n_search)
 {
 	const float ds_radius_2 = ds_rad * ds_rad;
 	gdata->lock();
@@ -154,7 +154,7 @@ PhotonIntegrator::PhotonIntegrator(Logger &logger, ParamResult &param_result, co
 	getRadianceMap()->setName("FG Radiance Photon Map");
 }
 
-void PhotonIntegrator::diffuseWorker(RenderControl &render_control, RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
+void PhotonIntegrator::diffuseWorker(RenderMonitor &render_monitor, PreGatherData &pgdat, unsigned int &total_photons_shot, const RenderControl &render_control, int thread_id, const Pdf1D *light_power_d, const std::vector<const Light *> &lights_diffuse, int pb_step)
 {
 	//shoot photons
 	bool done = false;
@@ -284,9 +284,9 @@ void PhotonIntegrator::photonMapKdTreeWorker(PhotonMap *photon_map, const Render
 	photon_map->updateTree(render_monitor, render_control);
 }
 
-bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
+bool PhotonIntegrator::preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
+	bool success = SurfaceIntegrator::preprocess(render_monitor, render_control, scene);
 
 	std::stringstream set;
 
@@ -370,7 +370,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 		logger_.logParams(getName(), ": Shooting ", photons_diffuse_, " photons across ", num_threads_photons_, " threads (", (photons_diffuse_ / num_threads_photons_), " photons/thread)");
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(pgdat), std::ref(curr), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::diffuseWorker, this, std::ref(render_monitor), std::ref(pgdat), std::ref(curr), std::ref(render_control), i, light_power_d_diffuse.get(), lights_diffuse, pb_step);
 		for(auto &t : threads) t.join();
 
 		render_monitor.setProgressBarAsDone();
@@ -449,7 +449,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&PhotonIntegrator::causticWorker, this, std::ref(render_monitor), std::ref(curr), std::ref(render_control), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
 		render_monitor.setProgressBarAsDone();
@@ -510,7 +510,7 @@ bool PhotonIntegrator::preprocess(RenderControl &render_control, RenderMonitor &
 
 		std::vector<std::thread> threads;
 		threads.reserve(n_threads);
-		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, std::ref(render_control), std::ref(render_monitor), &pgdat, params_.diffuse_radius_, params_.num_photons_diffuse_search_);
+		for(int i = 0; i < n_threads; ++i) threads.emplace_back(&PhotonIntegrator::preGatherWorker, std::ref(render_monitor), &pgdat, std::ref(render_control), params_.diffuse_radius_, params_.num_photons_diffuse_search_);
 		for(auto &t : threads) t.join();
 
 		getRadianceMap()->swapVector(pgdat.radiance_vec_);

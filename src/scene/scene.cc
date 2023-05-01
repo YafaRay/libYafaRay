@@ -36,6 +36,7 @@
 #include "param/param_result.h"
 #include "volume/region/volume_region.h"
 #include "common/sysinfo.h"
+#include "render/render_control.h"
 #include <memory>
 
 namespace yafaray {
@@ -307,6 +308,7 @@ yafaray_SceneModifiedFlags Scene::checkAndClearSceneModifiedFlags()
 
 bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifiedFlags scene_modified_flags)
 {
+	if(render_control.canceled() || render_control.finished()) return false;
 	//if(!accelerator_) scene_modified_flags = static_cast<yafaray_SceneModifiedFlags>(YAFARAY_SCENE_MODIFIED_LIGHTS | YAFARAY_SCENE_MODIFIED_IMAGES | YAFARAY_SCENE_MODIFIED_TEXTURES | YAFARAY_SCENE_MODIFIED_MATERIALS | YAFARAY_SCENE_MODIFIED_OBJECTS | YAFARAY_SCENE_MODIFIED_VOLUME_REGIONS);
 	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_OBJECTS)
 	{

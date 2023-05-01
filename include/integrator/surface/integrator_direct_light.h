@@ -37,7 +37,7 @@ class DirectLightIntegrator final : public CausticPhotonIntegrator
 
 	private:
 		[[nodiscard]] Type type() const override { return Type::DirectLight; }
-		bool preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene) override;
+		bool preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene) override;
 		std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) override;
 };
 

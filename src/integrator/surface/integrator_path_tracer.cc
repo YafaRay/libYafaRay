@@ -80,9 +80,9 @@ PathIntegrator::PathIntegrator(Logger &logger, ParamResult &param_result, const 
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool PathIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
+bool PathIntegrator::preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
+	bool success = SurfaceIntegrator::preprocess(render_monitor, render_control, scene);
 	std::stringstream set;
 
 	render_monitor.addTimerEvent("prepass");
@@ -99,7 +99,7 @@ bool PathIntegrator::preprocess(RenderControl &render_control, RenderMonitor &re
 
 	if(params_.caustic_type_.has(CausticType::Photon))
 	{
-		success = success && createCausticMap(render_control, render_monitor);
+		success = success && createCausticMap(render_monitor, render_control);
 	}
 
 	if(params_.caustic_type_ == CausticType::Path)

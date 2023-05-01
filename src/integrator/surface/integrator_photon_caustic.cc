@@ -99,7 +99,7 @@ Rgb CausticPhotonIntegrator::causticPhotons(ColorLayers *color_layers, const Ray
 	return col;
 }
 
-void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, RenderMonitor &render_monitor, unsigned int &total_photons_shot, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
+void CausticPhotonIntegrator::causticWorker(RenderMonitor &render_monitor, unsigned int &total_photons_shot, const RenderControl &render_control, int thread_id, const Pdf1D *light_power_d_caustic, const std::vector<const Light *> &lights_caustic, int pb_step)
 {
 	bool done = false;
 	const int num_lights_caustic = lights_caustic.size();
@@ -222,7 +222,7 @@ void CausticPhotonIntegrator::causticWorker(RenderControl &render_control, Rende
 	getCausticMap()->unlock();
 }
 
-bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, RenderMonitor &render_monitor)
+bool CausticPhotonIntegrator::createCausticMap(RenderMonitor &render_monitor, const RenderControl &render_control)
 {
 	getCausticMap()->clear();
 	getCausticMap()->setNumPaths(0);
@@ -261,7 +261,7 @@ bool CausticPhotonIntegrator::createCausticMap(RenderControl &render_control, Re
 
 		std::vector<std::thread> threads;
 		threads.reserve(num_threads_photons_);
-		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_control), std::ref(render_monitor), std::ref(curr), i, light_power_d_caustic.get(), lights_caustic, pb_step);
+		for(int i = 0; i < num_threads_photons_; ++i) threads.emplace_back(&CausticPhotonIntegrator::causticWorker, this, std::ref(render_monitor), std::ref(curr), std::ref(render_control), i, light_power_d_caustic.get(), lights_caustic, pb_step);
 		for(auto &t : threads) t.join();
 
 		render_monitor.setProgressBarAsDone();

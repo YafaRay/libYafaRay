@@ -12,6 +12,9 @@ LIBYAFARAY_4.0.0 {
         # Render Control functions
         yafaray_createRenderControl;
         yafaray_destroyRenderControl;
+        yafaray_setRenderControlForNormalStart;
+        yafaray_setRenderControlForProgressiveStart;
+        yafaray_setRenderControlForResuming;
         yafaray_cancelRendering;
 
         # Render Monitor functions

@@ -30,6 +30,25 @@ void yafaray_destroyRenderControl(yafaray_RenderControl *render_control)
 	delete reinterpret_cast<yafaray::RenderControl *>(render_control);
 }
 
+void yafaray_setRenderControlForNormalStart(yafaray_RenderControl *render_control)
+{
+	if(!render_control) return;
+	reinterpret_cast<yafaray::RenderControl *>(render_control)->setStarted();
+}
+
+void yafaray_setRenderControlForProgressiveStart(yafaray_RenderControl *render_control)
+{
+	if(!render_control) return;
+	reinterpret_cast<yafaray::RenderControl *>(render_control)->setStarted();
+	reinterpret_cast<yafaray::RenderControl *>(render_control)->setProgressive();
+}
+
+void yafaray_setRenderControlForResuming(yafaray_RenderControl *render_control)
+{
+	if(!render_control) return;
+	reinterpret_cast<yafaray::RenderControl *>(render_control)->setResumed();
+}
+
 void yafaray_cancelRendering(yafaray_RenderControl *render_control)
 {
 	if(!render_control) return;

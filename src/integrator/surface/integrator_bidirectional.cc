@@ -197,9 +197,9 @@ BidirectionalIntegrator::BidirectionalIntegrator(Logger &logger, ParamResult &pa
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
-bool BidirectionalIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
+bool BidirectionalIntegrator::preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene)
 {
-	bool success = SurfaceIntegrator::preprocess(render_control, render_monitor, scene);
+	bool success = SurfaceIntegrator::preprocess(render_monitor, render_control, scene);
 	n_paths_ = 0;
 	f_num_lights_ = 1.f / static_cast<float>(numLights());
 	std::vector<float> energies(numLights());

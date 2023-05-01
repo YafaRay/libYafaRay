@@ -190,8 +190,9 @@ SurfaceIntegrator::SurfaceIntegrator(Logger &logger, ParamResult &param_result, 
 
 SurfaceIntegrator::~SurfaceIntegrator() = default;
 
-bool SurfaceIntegrator::preprocess(RenderControl &render_control, RenderMonitor &render_monitor, const Scene &scene)
+bool SurfaceIntegrator::preprocess(RenderMonitor &render_monitor, const RenderControl &render_control, const Scene &scene)
 {
+	if(render_control.canceled() || render_control.finished()) return false;
 	bool result{true};
 	accelerator_ = scene.getAccelerator();
 	if(!accelerator_) result = false;
@@ -310,16 +311,10 @@ int SurfaceIntegrator::setNumThreads(int threads)
 	return result;
 }
 
-bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film, yafaray_RenderMode render_mode)
+bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film)
 {
-	if(!image_film) return false;
+	if(!image_film || render_control.canceled() || render_control.finished()) return false;
 	image_film_ = image_film;
-	if(render_mode == YAFARAY_RENDER_RESUME) render_control.setResumed();
-	else
-	{
-		render_control.setStarted();
-		if(render_mode == YAFARAY_RENDER_PROGRESSIVE) render_control.setProgressive();
-	}
 	const bool success = render(render_control, render_monitor);
 	if(!success)
 	{
