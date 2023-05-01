@@ -462,16 +462,19 @@ int main()
 
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
+	yafaray_setParamMapString(param_map, "type", "directlighting");
+	/* yafaray_setParamMapString(param_map, "type", "photonmapping"); */
+	yafaray_setParamMapInt(param_map, "AA_passes", 5);
+	yafaray_setParamMapInt(param_map, "AA_minsamples", 3);
+	yafaray_setParamMapInt(param_map, "AA_inc_samples", 3);
 	yafaray_setParamMapInt(param_map, "raydepth", 2);
 	yafaray_setParamMapInt(param_map, "shadowDepth", 2);
-	yafaray_setParamMapString(param_map, "type", "directlighting");
 	surface_integrator = yafaray_createSurfaceIntegrator(logger, "surface integrator", param_map);
 
 	/* Creating film */
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapInt(param_map, "width", 480);
 	yafaray_setParamMapInt(param_map, "height", 270);
-	yafaray_setParamMapInt(param_map, "AA_minsamples", 3);
 	film = yafaray_createFilm(logger, surface_integrator, "film", param_map);
 
 	/* Setting up film layers */
