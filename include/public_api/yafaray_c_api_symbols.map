@@ -84,6 +84,7 @@ LIBYAFARAY_4.0.0 {
         # Scene functions
         yafaray_createScene;
         yafaray_destroyScene;
+        yafaray_setSceneAcceleratorParams;
         yafaray_checkAndClearSceneModifiedFlags;
         yafaray_preprocessScene;
         yafaray_getMaterialId;

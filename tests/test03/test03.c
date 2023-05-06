@@ -42,14 +42,12 @@ int main()
 	yafaray_setConsoleLogColorsEnabled(logger, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(logger, YAFARAY_LOG_LEVEL_VERBOSE);
 
+	/* Creating scene */
+	scene = yafaray_createScene(logger, "scene");
+
 	/* Creating param map and param map list */
 	param_map = yafaray_createParamMap();
 	param_map_list = yafaray_createParamMapList();
-
-	/* Creating scene */
-	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "scene_accelerator", "yafaray-kdtree-original");
-	scene = yafaray_createScene(logger, "scene", param_map);
 
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapString(param_map, "color_space", "sRGB");

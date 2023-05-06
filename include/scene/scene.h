@@ -21,6 +21,7 @@
 #define LIBYAFARAY_SCENE_H
 
 #include "common/items.h"
+#include "param/param.h"
 #include <list>
 
 namespace yafaray {
@@ -39,7 +40,6 @@ class ImageFilm;
 class Scene;
 class ImageOutput;
 class Format;
-class ParamMap;
 class SurfaceIntegrator;
 class VolumeIntegrator;
 class SurfacePoint;
@@ -67,10 +67,10 @@ class Scene final
 {
 	public:
 		inline static std::string getClassName() { return "Scene"; }
-		Scene(Logger &logger, const std::string &name, const ParamMap &param_map);
+		Scene(Logger &logger, const std::string &name);
 		~Scene();
 		std::string getName() const { return name_; }
-		int getNumThreads() const { return nthreads_; }
+		void setAcceleratorParamMap(const ParamMap &param_map);
 		int addVertex(size_t object_id, Point3f &&p, unsigned char time_step);
 		int addVertex(size_t object_id, Point3f &&p, Point3f &&orco, unsigned char time_step);
 		void addVertexNormal(size_t object_id, Vec3f &&n, unsigned char time_step);
@@ -119,16 +119,14 @@ class Scene final
 		size_t getMaterialIndexHighest() const { return material_index_highest_; }
 
 	private:
-		void setNumThreads(int threads);
-
 		std::string name_{"Renderer"};
-		int nthreads_ = 1;
 		std::unique_ptr<Bound<float>> scene_bound_; //!< bounding box of all (finite) scene geometry
 		int object_index_highest_ = 1; //!< Highest object index used for the Normalized Object Index pass.
 		int material_index_highest_ = 1; //!< Highest material index used for the Normalized Object Index pass.
 		size_t material_id_default_ = 0;
 		bool mipmap_interpolation_required_{false}; //!< Indicates if there are any textures that require mipmap interpolation
-		std::string scene_accelerator_;
+		ParamMap accelerator_param_map_;
+		bool accelerator_param_map_modified_{true};
 		std::unique_ptr<const Accelerator> accelerator_;
 		std::unique_ptr<Background> background_;
 		std::vector<std::unique_ptr<Instance>> instances_;

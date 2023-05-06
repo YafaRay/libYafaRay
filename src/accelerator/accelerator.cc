@@ -22,6 +22,7 @@
 #include "accelerator/accelerator_simple_test.h"
 #include "common/logger.h"
 #include "param/param.h"
+#include "common/sysinfo.h"
 
 namespace yafaray {
 
@@ -43,14 +44,31 @@ ParamMap Accelerator::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Accelerator>, ParamResult> Accelerator::factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("** " + getClassName() + "::factory 'raw' ParamMap contents:\n" + param_map.logContents());
-	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map)};
+	const auto type{class_meta::getTypeFromParamMap<Type>(logger, getClassName(), param_map, true)};
 	switch(type.value())
 	{
 		case Type::SimpleTest: return AcceleratorSimpleTest::factory(logger, render_control, primitives_list, param_map);
-		case Type::KdTreeOriginal: return AcceleratorKdTree::factory(logger, render_control, primitives_list, param_map);
 		case Type::KdTreeMultiThread: return AcceleratorKdTreeMultiThread::factory(logger, render_control, primitives_list, param_map);
-		default: return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
+		case Type::KdTreeOriginal:
+		default: return AcceleratorKdTree::factory(logger, render_control, primitives_list, param_map);
 	}
+}
+
+int Accelerator::setNumThreads(Logger &logger, int threads) const
+{
+	int calculated_threads{threads};
+	if(threads == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	{
+		if(logger.isVerbose()) logger.logVerbose("Automatic Detection of Threads: Active.");
+		calculated_threads = sysinfo::getNumSystemThreads();
+		if(logger.isVerbose()) logger.logVerbose("Number of Threads supported: [", calculated_threads, "].");
+	}
+	else
+	{
+		if(logger.isVerbose()) logger.logVerbose("Automatic Detection of Threads: Inactive.");
+	}
+	logger.logParams(type().print(), " using [", calculated_threads, "] Threads.");
+	return calculated_threads;
 }
 
 } //namespace yafaray

@@ -58,6 +58,9 @@ class Parameter
 		explicit Parameter(const Rgba &c);
 		explicit Parameter(const Matrix4f &m);
 
+		bool operator==(const Parameter &parameter) const;
+		bool operator!=(const Parameter &parameter) const;
+
 		// return parameter value in reference parameter, return true if
 		// the parameter type matches, false otherwise.
 		bool getVal(std::string &s) const;
@@ -96,6 +99,8 @@ class Parameter
 class ParamMap : public Collection<std::string, Parameter>
 {
 	public:
+		bool operator==(const ParamMap &param_map) const;
+		bool operator!=(const ParamMap &param_map) const;
 		//! template function to get a value, available types are those of parameter_t::getVal()
 		template <typename T>
 		ResultFlags getParam(const std::string &name, T &val) const

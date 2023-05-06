@@ -57,14 +57,12 @@ int main()
 	yafaray_setConsoleLogColorsEnabled(logger, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(logger, YAFARAY_LOG_LEVEL_VERBOSE);
 
+	/* Creating scene */
+	scene = yafaray_createScene(logger, "scene");
+
 	/* Creating param map and param map list */
 	param_map = yafaray_createParamMap();
 	param_map_list = yafaray_createParamMapList();
-
-	/* Creating scene */
-	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "scene_accelerator", "yafaray-kdtree-multi-thread");
-	scene = yafaray_createScene(logger, "scene", param_map);
 
 	yafaray_clearParamMap(param_map);
 	yafaray_setParamMapBool(param_map, "adj_clamp", YAFARAY_BOOL_TRUE);
@@ -5192,6 +5190,12 @@ int main()
 	yafaray_setParamMapString(param_map, "color_space", "sRGB");
 	/* yafaray_setParamMapString(param_map, "badge_position", "top"); */
 	yafaray_createOutput(film, "output1_tga", param_map);
+
+	/* Setting Scene Accelerator parameters (optional) */
+	yafaray_clearParamMap(param_map);
+	yafaray_setParamMapString(param_map, "type", "yafaray-kdtree-multi-thread");
+	yafaray_setParamMapInt(param_map, "threads", 6);
+	yafaray_setSceneAcceleratorParams(scene, param_map);
 
 	/* Rendering */
 	render_monitor = yafaray_createRenderMonitor(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);

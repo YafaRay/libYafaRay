@@ -35,19 +35,14 @@
 #include "texture/texture.h"
 #include "param/param_result.h"
 #include "volume/region/volume_region.h"
-#include "common/sysinfo.h"
 #include "render/render_control.h"
 #include <memory>
 
 namespace yafaray {
 
-Scene::Scene(Logger &logger, const std::string &name, const ParamMap &param_map) : name_{name}, scene_bound_{std::make_unique<Bound<float>>()}, logger_{logger}
+Scene::Scene(Logger &logger, const std::string &name) : name_{name}, scene_bound_{std::make_unique<Bound<float>>()}, logger_{logger}
 {
 	createDefaultMaterial();
-	int nthreads = -1;
-	param_map.getParam("threads", nthreads); // number of threads, -1 = auto detection
-	setNumThreads(nthreads);
-	param_map.getParam("scene_accelerator", scene_accelerator_);
 }
 
 //This is just to avoid compilation error "error: invalid application of ‘sizeof’ to incomplete type ‘yafaray::Accelerator’" because the destructor needs to know the type of any shared_ptr or unique_ptr objects
@@ -111,10 +106,10 @@ std::pair<size_t, ParamResult> Scene::createMaterial(const std::string &name, co
 	if(param_result.hasError()) return {material_id_default_, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose(getClassName(), "'", this->getName(), "': Added ", material->getClassName(), " '", name, "' (", material->type().print(), ")!");
+		logger_.logVerbose(getClassName(), " '", this->getName(), "': Added ", material->getClassName(), " '", name, "' (", material->type().print(), ")!");
 	}
 	auto [material_id, result_flags]{materials_.add(name, std::move(material))};
-	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug(getClassName(), "'", this->getName(), "': ", material->getClassName(), " \"", name, "\" already exists, replacing.");
+	if(result_flags == YAFARAY_RESULT_WARNING_OVERWRITTEN) logger_.logDebug(getClassName(), " '", this->getName(), "': ", material->getClassName(), " \"", name, "\" already exists, replacing.");
 	param_result.flags_ |= result_flags;
 	return {material_id, param_result};
 }
@@ -135,12 +130,12 @@ ParamResult Scene::defineBackground(const ParamMap &param_map)
 	auto [background, background_result]{Background::factory(logger_, "background", param_map, getTextures())};
 	if(!background)
 	{
-		logger_.logError(getClassName(), "'", this->getName(), "': background could not be created!");
+		logger_.logError(getClassName(), " '", this->getName(), "': background could not be created!");
 		return background_result;
 	}
 	else if(logger_.isVerbose())
 	{
-		logger_.logVerbose(getClassName(), "'", this->getName(), "': Added ", background->getClassName(), " '", "", "' (", background->type().print(), ")!");
+		logger_.logVerbose(getClassName(), " '", this->getName(), "': Added ", background->getClassName(), " '", "", "' (", background->type().print(), ")!");
 	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
 	background_ = std::move(background);
@@ -303,6 +298,11 @@ yafaray_SceneModifiedFlags Scene::checkAndClearSceneModifiedFlags()
 		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_IMAGES;
 		images_.clearModifiedList();
 	}
+	if(accelerator_param_map_modified_)
+	{
+		scene_modified_flags = scene_modified_flags | YAFARAY_SCENE_MODIFIED_SCENE_ACCELERATOR_PARAMS;
+		accelerator_param_map_modified_ = false;
+	}
 	return static_cast<yafaray_SceneModifiedFlags>(scene_modified_flags);
 }
 
@@ -310,7 +310,7 @@ bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifie
 {
 	if(render_control.canceled() || render_control.finished()) return false;
 	//if(!accelerator_) scene_modified_flags = static_cast<yafaray_SceneModifiedFlags>(YAFARAY_SCENE_MODIFIED_LIGHTS | YAFARAY_SCENE_MODIFIED_IMAGES | YAFARAY_SCENE_MODIFIED_TEXTURES | YAFARAY_SCENE_MODIFIED_MATERIALS | YAFARAY_SCENE_MODIFIED_OBJECTS | YAFARAY_SCENE_MODIFIED_VOLUME_REGIONS);
-	if(scene_modified_flags & YAFARAY_SCENE_MODIFIED_OBJECTS)
+	if((scene_modified_flags & YAFARAY_SCENE_MODIFIED_OBJECTS) || (scene_modified_flags & YAFARAY_SCENE_MODIFIED_SCENE_ACCELERATOR_PARAMS))
 	{
 		std::vector<const Primitive *> primitives;
 		for(const auto &[object, object_name, object_enabled]: objects_)
@@ -338,11 +338,13 @@ bool Scene::preprocess(const RenderControl &render_control, yafaray_SceneModifie
 		{
 			logger_.logWarning(getClassName(), " '", getName(), "': Scene is empty...");
 		}
-		ParamMap params;
-		params["type"] = scene_accelerator_;
-		params["accelerator_threads"] = getNumThreads();
 
-		accelerator_ = Accelerator::factory(logger_, &render_control, primitives, params).first;
+		auto [accelerator, accelerator_result]{Accelerator::factory(logger_, &render_control, primitives, accelerator_param_map_)};
+		if(logger_.isVerbose() && accelerator)
+		{
+			logger_.logVerbose(getClassName(), " '", getName(), "': Added ", accelerator->getClassName(), " (", accelerator->type().print(), ")!");
+		}
+		accelerator_ = std::move(accelerator);
 		*scene_bound_ = accelerator_->getBound();
 		if(logger_.isVerbose()) logger_.logVerbose(getClassName(), " '", getName(), "': New scene bound is: ", "(", scene_bound_->a_[Axis::X], ", ", scene_bound_->a_[Axis::Y], ", ", scene_bound_->a_[Axis::Z], "), (", scene_bound_->g_[Axis::X], ", ", scene_bound_->g_[Axis::Y], ", ", scene_bound_->g_[Axis::Z], ")");
 
@@ -431,22 +433,13 @@ std::pair<Size2i, bool> Scene::getImageSize(size_t image_id) const
 	return {image->getSize(), true};
 }
 
-void Scene::setNumThreads(int threads)
+void Scene::setAcceleratorParamMap(const ParamMap &param_map)
 {
-	nthreads_ = threads;
-
-	if(nthreads_ == -1) //Automatic detection of number of threads supported by this system, taken from Blender. (DT)
+	if(accelerator_param_map_ != param_map)
 	{
-		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Active.");
-		nthreads_ = sysinfo::getNumSystemThreads();
-		if(logger_.isVerbose()) logger_.logVerbose("Number of Threads supported: [", nthreads_, "].");
+		accelerator_param_map_ = param_map;
+		accelerator_param_map_modified_ = true;
 	}
-	else
-	{
-		if(logger_.isVerbose()) logger_.logVerbose("Automatic Detection of Threads: Inactive.");
-	}
-
-	logger_.logParams("Scene '", getName(), "' using [", nthreads_, "] Threads.");
 }
 
 } //namespace yafaray

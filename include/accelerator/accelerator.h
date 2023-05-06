@@ -36,8 +36,10 @@ class Camera;
 
 class Accelerator
 {
+	protected: struct Type;
 	public:
 		inline static std::string getClassName() { return "Accelerator"; }
+		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 
@@ -60,6 +62,7 @@ class Accelerator
 		static float calculateDynamicRayBias(const Bound<float>::Cross &bound_cross) { return 0.1f * minRayDist() * std::abs(bound_cross.leave_ - bound_cross.enter_); } //!< empirical guesstimate for ray bias to avoid self intersections, calculated based on the length segment of the ray crossing the tree bound, to estimate the loss of precision caused by the (very roughly approximate) size of the primitive
 
 	protected:
+		int setNumThreads(Logger &logger, int threads) const;
 		struct Type : public Enum<Type>
 		{
 			using Enum::Enum;
@@ -70,7 +73,6 @@ class Accelerator
 					{"yafaray-kdtree-multi-thread", KdTreeMultiThread, ""},
 				}};
 		};
-		[[nodiscard]] virtual Type type() const = 0;
 		const struct Params
 		{
 			Params(ParamResult &param_result, const ParamMap &param_map);

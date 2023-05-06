@@ -18,21 +18,25 @@
 
 #include "public_api/yafaray_c_api.h"
 #include "scene/scene.h"
-#include "geometry/matrix.h"
 #include "geometry/primitive/face_indices.h"
 #include "param/param_result.h"
-#include "color/color.h"
 
-yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map)
+yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name)
 {
-	if(!logger || !name || !param_map) return nullptr;
-	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger), name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	if(!logger || !name) return nullptr;
+	auto scene{new yafaray::Scene(*reinterpret_cast<yafaray::Logger *>(logger), name)};
 	return reinterpret_cast<yafaray_Scene *>(scene);
 }
 
 void yafaray_destroyScene(yafaray_Scene *scene)
 {
 	delete reinterpret_cast<yafaray::Scene *>(scene);
+}
+
+void yafaray_setSceneAcceleratorParams(yafaray_Scene *scene, const yafaray_ParamMap *param_map)
+{
+	if(!scene || !param_map) return;
+	reinterpret_cast<yafaray::Scene *>(scene)->setAcceleratorParamMap(*reinterpret_cast<const yafaray::ParamMap *>(param_map));
 }
 
 yafaray_Bool yafaray_initObject(yafaray_Scene *scene, size_t object_id, size_t material_id) //!< initialize object. The material_id may or may not be used by the object depending on the type of the object

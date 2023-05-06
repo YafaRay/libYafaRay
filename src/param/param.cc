@@ -229,6 +229,26 @@ std::string Parameter::printType() const
 	}
 }
 
+bool Parameter::operator==(const Parameter &parameter) const
+{
+	return (
+			fval_ == parameter.fval_ &&
+			sval_ == parameter.sval_ &&
+			vval_ == parameter.vval_ &&
+			type_ == parameter.type_
+	);
+}
+
+bool Parameter::operator!=(const Parameter &parameter) const
+{
+	return (
+			fval_ != parameter.fval_ ||
+			sval_ != parameter.sval_ ||
+			vval_ != parameter.vval_ ||
+			type_ != parameter.type_
+	);
+}
+
 std::string ParamMap::print() const
 {
 	std::string result;
@@ -253,6 +273,24 @@ void ParamMap::setInputColorSpace(const std::string &color_space_string, float g
 {
 	input_color_space_.initFromString(color_space_string);
 	input_gamma_ = gamma_val;
+}
+
+bool ParamMap::operator==(const ParamMap &param_map) const
+{
+	return (
+			items_ == param_map.items_ &&
+			input_gamma_ == param_map.input_gamma_ &&
+			input_color_space_ == param_map.input_color_space_
+	);
+}
+
+bool ParamMap::operator!=(const ParamMap &param_map) const
+{
+	return (
+			items_ != param_map.items_ ||
+			input_gamma_ != param_map.input_gamma_ ||
+			input_color_space_ != param_map.input_color_space_
+	);
 }
 
 } //namespace yafaray

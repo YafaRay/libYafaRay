@@ -37,7 +37,7 @@ std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &m
 	const auto [existing_item, existing_item_id, existing_item_result]{map.getByName(name)};
 	if(existing_item)
 	{
-		if(logger.isVerbose()) logger.logWarning(items_container.getClassName(), "'", items_container.getName(), "': item with name '", name, "' already exists, overwriting with new item.");
+		if(logger.isVerbose()) logger.logWarning(items_container.getClassName(), " '", items_container.getName(), "': item with name '", name, "' already exists, overwriting with new item.");
 	}
 	std::unique_ptr<T> new_item;
 	ParamResult param_result;
@@ -47,7 +47,7 @@ std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &m
 	{
 		if(logger.isVerbose())
 		{
-			logger.logVerbose(items_container.getClassName(), "'", items_container.getName(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
+			logger.logVerbose(items_container.getClassName(), " '", items_container.getName(), "': Added ", new_item->getClassName(), " '", name, "' (", new_item->type().print(), ")!");
 		}
 		const auto [new_item_id, adding_result]{map.add(name, std::move(new_item))};
 		param_result.flags_ |= adding_result;

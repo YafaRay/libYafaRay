@@ -51,7 +51,8 @@ typedef enum
 	YAFARAY_SCENE_MODIFIED_MATERIALS = 1 << 2,
 	YAFARAY_SCENE_MODIFIED_TEXTURES = 1 << 3,
 	YAFARAY_SCENE_MODIFIED_VOLUME_REGIONS = 1 << 4,
-	YAFARAY_SCENE_MODIFIED_IMAGES = 1 << 5
+	YAFARAY_SCENE_MODIFIED_IMAGES = 1 << 5,
+	YAFARAY_SCENE_MODIFIED_SCENE_ACCELERATOR_PARAMS = 1 << 6
 } yafaray_SceneModifiedFlags;
 typedef enum
 {
@@ -163,8 +164,9 @@ YAFARAY_C_API_EXPORT void yafaray_setHighlightAreaCallback(yafaray_Film *film, y
 
 
 /* Scene functions */
-YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map);
+YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name);
 YAFARAY_C_API_EXPORT void yafaray_destroyScene(yafaray_Scene *scene);
+YAFARAY_C_API_EXPORT void yafaray_setSceneAcceleratorParams(yafaray_Scene *scene, const yafaray_ParamMap *param_map);
 YAFARAY_C_API_EXPORT yafaray_SceneModifiedFlags yafaray_checkAndClearSceneModifiedFlags(yafaray_Scene *scene);
 YAFARAY_C_API_EXPORT yafaray_Bool yafaray_preprocessScene(yafaray_Scene *scene, const yafaray_RenderControl *render_control, yafaray_SceneModifiedFlags scene_modified_flags);
 YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_getMaterialId(yafaray_Scene *scene, size_t *id_obtained, const char *name);

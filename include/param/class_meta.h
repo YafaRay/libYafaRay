@@ -58,12 +58,16 @@ param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
 
 template<typename TypeEnumClass>
-inline TypeEnumClass getTypeFromParamMap(Logger &logger, const std::string &class_name, const ParamMap &param_map)
+inline TypeEnumClass getTypeFromParamMap(Logger &logger, const std::string &class_name, const ParamMap &param_map, bool allow_no_type = false)
 {
 	std::string type_str;
 	ParamResult type_error{param_map.getParam("type", type_str)};
 	TypeEnumClass type;
-	if(!type.initFromString(type_str)) type_error.flags_ |= YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION;
+	if(!type.initFromString(type_str))
+	{
+		if(type_error.flags_ == YAFARAY_RESULT_WARNING_PARAM_NOT_SET && allow_no_type) return type;
+		else type_error.flags_ |= YAFARAY_RESULT_WARNING_UNKNOWN_ENUM_OPTION;
+	}
 	if(type_error.notOk())
 	{
 		std::string warning_message{class_name + ": error in parameter 'type' (string): "};

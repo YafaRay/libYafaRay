@@ -73,7 +73,7 @@ AcceleratorKdTreeMultiThread::AcceleratorKdTreeMultiThread(Logger &logger, Param
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const auto num_primitives = static_cast<uint32_t>(primitives.size());
-	logger_.logInfo(getClassName(), ": Starting build (", num_primitives, " prims, cost_ratio:", params_.cost_ratio_, " empty_bonus:", params_.empty_bonus_, ") [using ", params_.num_threads_, " threads, min indices to spawn threads: ", params_.min_indices_to_spawn_threads_, "]");
+	logger_.logInfo(getClassName(), ": Starting build (", num_primitives, " prims, cost_ratio:", params_.cost_ratio_, " empty_bonus:", params_.empty_bonus_, ") [using ", num_current_threads_, " threads, min indices to spawn threads: ", params_.min_indices_to_spawn_threads_, "]");
 	clock_t clock_start = clock();
 	Params tree_build_parameters{params_};
 	if(tree_build_parameters.max_depth_ <= 0) tree_build_parameters.max_depth_ = static_cast<int>(7.0f + 1.66f * math::log(static_cast<float>(num_primitives)));
