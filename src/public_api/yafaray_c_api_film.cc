@@ -32,6 +32,11 @@ void yafaray_destroyFilm(yafaray_Film *film)
 	delete reinterpret_cast<yafaray::ImageFilm *>(film);
 }
 
+char *yafaray_getFilmName(yafaray_Film *film)
+{
+	return createCharString(reinterpret_cast<const yafaray::ImageFilm *>(film)->getName());
+}
+
 yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map)
 {
 	if(!film || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;

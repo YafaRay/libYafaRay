@@ -17,6 +17,7 @@
  */
 
 #include "public_api/yafaray_c_api.h"
+#include "public_api/yafaray_c_api_utils.h"
 #include "integrator/surface/integrator_surface.h"
 
 yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logger, const char *name, const yafaray_ParamMap *param_map)
@@ -29,6 +30,11 @@ yafaray_SurfaceIntegrator *yafaray_createSurfaceIntegrator(yafaray_Logger *logge
 void yafaray_destroySurfaceIntegrator(yafaray_SurfaceIntegrator *surface_integrator)
 {
 	delete reinterpret_cast<yafaray::SurfaceIntegrator *>(surface_integrator);
+}
+
+char *yafaray_getSurfaceIntegratorName(yafaray_SurfaceIntegrator *surface_integrator)
+{
+	return createCharString(reinterpret_cast<const yafaray::SurfaceIntegrator *>(surface_integrator)->getName());
 }
 
 yafaray_ResultFlags yafaray_defineVolumeIntegrator(yafaray_SurfaceIntegrator *surface_integrator, const yafaray_Scene *scene, const yafaray_ParamMap *param_map)

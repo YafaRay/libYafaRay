@@ -60,6 +60,7 @@ LIBYAFARAY_4.0.0 {
         # Surface Integrator functions
         yafaray_createSurfaceIntegrator;
         yafaray_destroySurfaceIntegrator;
+        yafaray_getSurfaceIntegratorName;
         yafaray_defineVolumeIntegrator;
         yafaray_preprocessSurfaceIntegrator;
         yafaray_render;
@@ -67,6 +68,7 @@ LIBYAFARAY_4.0.0 {
         # Film functions
         yafaray_createFilm;
         yafaray_destroyFilm;
+        yafaray_getFilmName;
         yafaray_getFilmWidth;
         yafaray_getFilmHeight;
         yafaray_defineCamera;
@@ -80,10 +82,29 @@ LIBYAFARAY_4.0.0 {
         yafaray_setFlushCallback;
         yafaray_setHighlightAreaCallback;
 
+        # YafaRay Container functions
+        yafaray_createContainer;
+        yafaray_destroyContainerButNotContainedPointers;
+        yafaray_destroyContainerAndContainedPointers;
+        yafaray_addSceneToContainer;
+        yafaray_addSurfaceIntegratorToContainer;
+        yafaray_addFilmToContainer;
+        yafaray_numberOfScenesInContainer;
+        yafaray_numberOfSurfaceIntegratorsInContainer;
+        yafaray_numberOfFilmsInContainer;
+        yafaray_getSceneFromContainerByIndex;
+        yafaray_getSceneFromContainerByName;
+        yafaray_getSurfaceIntegratorFromContainerByIndex;
+        yafaray_getSurfaceIntegratorFromContainerByName;
+        yafaray_getFilmFromContainerByIndex;
+        yafaray_getFilmFromContainerByName;
+        yafaray_exportContainerToString;
+
 
         # Scene functions
         yafaray_createScene;
         yafaray_destroyScene;
+        yafaray_getSceneName;
         yafaray_setSceneAcceleratorParams;
         yafaray_checkAndClearSceneModifiedFlags;
         yafaray_preprocessScene;

@@ -17,6 +17,7 @@
  */
 
 #include "public_api/yafaray_c_api.h"
+#include "public_api/yafaray_c_api_utils.h"
 #include "scene/scene.h"
 #include "geometry/primitive/face_indices.h"
 #include "param/param_result.h"
@@ -31,6 +32,11 @@ yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name)
 void yafaray_destroyScene(yafaray_Scene *scene)
 {
 	delete reinterpret_cast<yafaray::Scene *>(scene);
+}
+
+char *yafaray_getSceneName(yafaray_Scene *scene)
+{
+	return createCharString(reinterpret_cast<const yafaray::Scene *>(scene)->getName());
 }
 
 void yafaray_setSceneAcceleratorParams(yafaray_Scene *scene, const yafaray_ParamMap *param_map)

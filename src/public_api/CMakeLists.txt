@@ -18,6 +18,7 @@
 
 target_sources(libyafaray4
 	PRIVATE
+		yafaray_c_api_container.cc
 		yafaray_c_api_film.cc
 		yafaray_c_api_general.cc
 		yafaray_c_api_logger.cc
