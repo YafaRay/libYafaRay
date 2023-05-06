@@ -47,35 +47,6 @@ std::map<std::string, const ParamMeta *> SurfaceIntegrator::Params::getParamMeta
 	PARAM_META(shadow_bias_);
 	PARAM_META(ray_min_dist_auto_);
 	PARAM_META(ray_min_dist_);
-	PARAM_META(aa_passes_);
-	PARAM_META(aa_samples_);
-	PARAM_META(aa_inc_samples_);
-	PARAM_META(aa_threshold_);
-	PARAM_META(aa_resampled_floor_);
-	PARAM_META(aa_sample_multiplier_factor_);
-	PARAM_META(aa_light_sample_multiplier_factor_);
-	PARAM_META(aa_indirect_sample_multiplier_factor_);
-	PARAM_META(aa_detect_color_noise_);
-	PARAM_META(aa_dark_detection_type_);
-	PARAM_META(aa_dark_threshold_factor_);
-	PARAM_META(aa_variance_edge_size_);
-	PARAM_META(aa_variance_pixels_);
-	PARAM_META(aa_clamp_samples_);
-	PARAM_META(aa_clamp_indirect_);
-	PARAM_META(layer_mask_obj_index_);
-	PARAM_META(layer_mask_mat_index_);
-	PARAM_META(layer_mask_invert);
-	PARAM_META(layer_mask_only_);
-	PARAM_META(layer_toon_edge_color_);
-	PARAM_META(layer_object_edge_thickness_);
-	PARAM_META(layer_object_edge_threshold_);
-	PARAM_META(layer_object_edge_smoothness_);
-	PARAM_META(layer_toon_pre_smooth_);
-	PARAM_META(layer_toon_quantization_);
-	PARAM_META(layer_toon_post_smooth_);
-	PARAM_META(layer_faces_edge_thickness_);
-	PARAM_META(layer_faces_edge_threshold_);
-	PARAM_META(layer_faces_edge_smoothness_);
 	return param_meta_map;
 }
 
@@ -89,35 +60,6 @@ SurfaceIntegrator::Params::Params(ParamResult &param_result, const ParamMap &par
 	PARAM_LOAD(shadow_bias_);
 	PARAM_LOAD(ray_min_dist_auto_);
 	PARAM_LOAD(ray_min_dist_);
-	PARAM_LOAD(aa_passes_);
-	PARAM_LOAD(aa_samples_);
-	PARAM_LOAD(aa_inc_samples_);
-	PARAM_LOAD(aa_threshold_);
-	PARAM_LOAD(aa_resampled_floor_);
-	PARAM_LOAD(aa_sample_multiplier_factor_);
-	PARAM_LOAD(aa_light_sample_multiplier_factor_);
-	PARAM_LOAD(aa_indirect_sample_multiplier_factor_);
-	PARAM_LOAD(aa_detect_color_noise_);
-	PARAM_ENUM_LOAD(aa_dark_detection_type_);
-	PARAM_LOAD(aa_dark_threshold_factor_);
-	PARAM_LOAD(aa_variance_edge_size_);
-	PARAM_LOAD(aa_variance_pixels_);
-	PARAM_LOAD(aa_clamp_samples_);
-	PARAM_LOAD(aa_clamp_indirect_);
-	PARAM_LOAD(layer_mask_obj_index_);
-	PARAM_LOAD(layer_mask_mat_index_);
-	PARAM_LOAD(layer_mask_invert);
-	PARAM_LOAD(layer_mask_only_);
-	PARAM_LOAD(layer_toon_edge_color_);
-	PARAM_LOAD(layer_object_edge_thickness_);
-	PARAM_LOAD(layer_object_edge_threshold_);
-	PARAM_LOAD(layer_object_edge_smoothness_);
-	PARAM_LOAD(layer_toon_pre_smooth_);
-	PARAM_LOAD(layer_toon_quantization_);
-	PARAM_LOAD(layer_toon_post_smooth_);
-	PARAM_LOAD(layer_faces_edge_thickness_);
-	PARAM_LOAD(layer_faces_edge_threshold_);
-	PARAM_LOAD(layer_faces_edge_smoothness_);
 }
 
 ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
@@ -131,35 +73,6 @@ ParamMap SurfaceIntegrator::getAsParamMap(bool only_non_default) const
 	PARAM_SAVE(shadow_bias_);
 	PARAM_SAVE(ray_min_dist_auto_);
 	PARAM_SAVE(ray_min_dist_);
-	PARAM_SAVE(aa_passes_);
-	PARAM_SAVE(aa_samples_);
-	PARAM_SAVE(aa_inc_samples_);
-	PARAM_SAVE(aa_threshold_);
-	PARAM_SAVE(aa_resampled_floor_);
-	PARAM_SAVE(aa_sample_multiplier_factor_);
-	PARAM_SAVE(aa_light_sample_multiplier_factor_);
-	PARAM_SAVE(aa_indirect_sample_multiplier_factor_);
-	PARAM_SAVE(aa_detect_color_noise_);
-	PARAM_ENUM_SAVE(aa_dark_detection_type_);
-	PARAM_SAVE(aa_dark_threshold_factor_);
-	PARAM_SAVE(aa_variance_edge_size_);
-	PARAM_SAVE(aa_variance_pixels_);
-	PARAM_SAVE(aa_clamp_samples_);
-	PARAM_SAVE(aa_clamp_indirect_);
-	PARAM_SAVE(layer_mask_obj_index_);
-	PARAM_SAVE(layer_mask_mat_index_);
-	PARAM_SAVE(layer_mask_invert);
-	PARAM_SAVE(layer_mask_only_);
-	PARAM_SAVE(layer_toon_edge_color_);
-	PARAM_SAVE(layer_object_edge_thickness_);
-	PARAM_SAVE(layer_object_edge_threshold_);
-	PARAM_SAVE(layer_object_edge_smoothness_);
-	PARAM_SAVE(layer_toon_pre_smooth_);
-	PARAM_SAVE(layer_toon_quantization_);
-	PARAM_SAVE(layer_toon_post_smooth_);
-	PARAM_SAVE(layer_faces_edge_thickness_);
-	PARAM_SAVE(layer_faces_edge_threshold_);
-	PARAM_SAVE(layer_faces_edge_smoothness_);
 	return param_map;
 }
 
@@ -315,6 +228,7 @@ bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &ren
 {
 	if(!image_film || render_control.canceled() || render_control.finished()) return false;
 	image_film_ = image_film;
+	aa_noise_params_ = image_film_->getAaParameters();
 	const bool success = render(render_control, render_monitor);
 	if(!success)
 	{

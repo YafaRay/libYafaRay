@@ -166,7 +166,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 			col += estimateAllDirectLight(random_generator, color_layers, chromatic_enabled, wavelength, *sp, wo, ray_division, pixel_sampling_data);
 			if(params_.caustic_type_.has(CausticType::Photon))
 			{
-				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_.clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
+				col += causticPhotons(color_layers, ray, *sp, wo, aa_noise_params_->clamp_indirect_, caustic_map_.get(), CausticPhotonIntegrator::params_.caus_radius_, CausticPhotonIntegrator::params_.n_caus_search_);
 			}
 		}
 		// path tracing:
@@ -291,7 +291,7 @@ std::pair<Rgb, float> PathIntegrator::integrate(Ray &ray, RandomGenerator &rando
 		alpha = raytrace_alpha;
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateCommonLayers(color_layers, *sp, *image_film_->getMaskParams(), object_index_highest_, material_index_highest_);
 			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{

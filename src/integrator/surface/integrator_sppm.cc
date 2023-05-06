@@ -100,8 +100,8 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
-	aa_settings << " passes=" << params_.num_passes_ << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_;
-	aa_settings << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
+	aa_settings << " passes=" << params_.num_passes_ << " samples=" << aa_noise_params_->samples_ << " inc_samples=" << aa_noise_params_->inc_samples_;
+	aa_settings << " clamp=" << aa_noise_params_->clamp_samples_ << " ind.clamp=" << aa_noise_params_->clamp_indirect_;
 	render_monitor.setAaNoiseInfo(render_monitor.getAaNoiseInfo() + aa_settings.str());
 
 	render_monitor.setTotalPasses(params_.num_passes_);	//passNum is total number of passes in SPPM
@@ -109,8 +109,8 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 	float aa_light_sample_multiplier = 1.f;
 	float aa_indirect_sample_multiplier = 1.f;
 
-	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_samples: ", aa_noise_params_.clamp_samples_);
-	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_indirect: ", aa_noise_params_.clamp_indirect_);
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_samples: ", aa_noise_params_->clamp_samples_);
+	if(logger_.isVerbose()) logger_.logVerbose(getName(), ": AA_clamp_indirect: ", aa_noise_params_->clamp_indirect_);
 
 	std::stringstream set;
 
@@ -174,7 +174,7 @@ bool SppmIntegrator::render(RenderControl &render_control, RenderMonitor &render
 	{
 		if(render_control.canceled()) break;
 		pass_info = i + 1;
-		image_film_->nextPass(render_control, render_monitor, false, getName(), edge_toon_params_);
+		image_film_->nextPass(render_control, render_monitor, false, getName());
 		n_refined_ = 0;
 		renderPass(render_control, render_monitor, correlative_sample_number, 1, acum_aa_samples, false, i, aa_light_sample_multiplier, aa_indirect_sample_multiplier); // offset are only related to the passNum, since we alway have only one sample.
 		acum_aa_samples += 1;
@@ -207,10 +207,10 @@ bool SppmIntegrator::renderTile(std::vector<int> &correlative_sample_number, con
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	const bool sample_lns = image_film_->getCamera()->sampleLens();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
-	int aa_max_possible_samples = aa_noise_params_.samples_;
-	for(int i = 1; i < aa_noise_params_.passes_; ++i)
+	int aa_max_possible_samples = aa_noise_params_->samples_;
+	for(int i = 1; i < aa_noise_params_->passes_; ++i)
 	{
-		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * math::pow(aa_noise_params_.sample_multiplier_factor_, i));
+		aa_max_possible_samples += ceilf(aa_noise_params_->inc_samples_ * math::pow(aa_noise_params_->sample_multiplier_factor_, i));
 	}
 	float inv_aa_max_possible_samples = 1.f / static_cast<float>(aa_max_possible_samples);
 	ColorLayers color_layers(*image_film_->getLayers());
@@ -307,11 +307,11 @@ bool SppmIntegrator::renderTile(std::vector<int> &correlative_sample_number, con
 						case LayerDef::MatIndexMaskAll:
 							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							layer_col.clampRgb01();
-							if(mask_params_.invert_)
+							if(image_film_->getMaskParams()->invert_)
 							{
 								layer_col = Rgba(1.f) - layer_col;
 							}
-							if(!mask_params_.only_)
+							if(!image_film_->getMaskParams()->only_)
 							{
 								Rgba col_combined = color_layers(LayerDef::Combined);
 								col_combined.a_ = 1.f;
@@ -1020,7 +1020,7 @@ GatherInfo SppmIntegrator::traceGatherRay(Ray &ray, HitPoint &hp, RandomGenerato
 		}
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateCommonLayers(color_layers, *sp, *image_film_->getMaskParams(), object_index_highest_, material_index_highest_);
 			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, MonteCarloIntegrator::params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, MonteCarloIntegrator::params_.ao_distance_, MonteCarloIntegrator::params_.ao_color_, MonteCarloIntegrator::params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{

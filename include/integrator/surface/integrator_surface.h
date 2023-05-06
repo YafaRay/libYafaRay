@@ -25,8 +25,6 @@
 
 #include "geometry/bound.h"
 #include "color/color.h"
-#include "common/aa_noise_params.h"
-#include "common/mask_edge_toon_params.h"
 #include "common/enum.h"
 #include "common/enum_map.h"
 #include "param/class_meta.h"
@@ -52,6 +50,9 @@ class ImageFilm;
 class Accelerator;
 class FastRandom;
 class Light;
+struct EdgeToonParams;
+struct AaNoiseParams;
+struct MaskParams;
 
 class SurfaceIntegrator
 {
@@ -76,8 +77,6 @@ class SurfaceIntegrator
 		size_t numLights() const { return lights_visible_.size(); }
 		ParamResult defineVolumeIntegrator(const Scene &scene, const ParamMap &param_map);
 		float getShadowBias() const { return params_.shadow_bias_; }
-		const EdgeToonParams *getEdgeToonParams() const { return &edge_toon_params_; }
-		const AaNoiseParams *getAaParameters() const { return &aa_noise_params_; }
 
 	private:
 		std::string name_{getClassName()}; //Keep at the beginning of the list of members to ensure it is constructed before other methods called at construction
@@ -110,35 +109,6 @@ class SurfaceIntegrator
 			PARAM_DECL(float, shadow_bias_, Accelerator::shadowBias(), "shadow_bias", "Shadow bias to apply to shadows to avoid self-shadow artifacts. It gets overriden when automatic shadow bias is enabled.");
 			PARAM_DECL(bool, ray_min_dist_auto_, true, "ray_min_dist_auto", "Enable automatic ray minimum distance calculation");
 			PARAM_DECL(float, ray_min_dist_, Accelerator::minRayDist(), "ray_min_dist", "Ray minimum distance. It gets overriden when automatic ray min distance is enabled.");
-			PARAM_DECL(int, aa_passes_, 1, "AA_passes", "");
-			PARAM_DECL(int, aa_samples_, 1, "AA_minsamples", "Sample count for first pass");
-			PARAM_DECL(int, aa_inc_samples_, 1, "AA_inc_samples", "Sample count for additional passes");
-			PARAM_DECL(float , aa_threshold_, 0.05f, "AA_threshold", "");
-			PARAM_DECL(float , aa_resampled_floor_, 0.f, "AA_resampled_floor", "Minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the threshold value for the next pass");
-			PARAM_DECL(float , aa_sample_multiplier_factor_, 1.f, "AA_sample_multiplier_factor", "");
-			PARAM_DECL(float , aa_light_sample_multiplier_factor_, 1.f, "AA_light_sample_multiplier_factor", "");
-			PARAM_DECL(float , aa_indirect_sample_multiplier_factor_, 1.f, "AA_indirect_sample_multiplier_factor", "");
-			PARAM_DECL(bool , aa_detect_color_noise_, false, "AA_detect_color_noise", "");
-			PARAM_ENUM_DECL(AaNoiseParams::DarkDetectionType, aa_dark_detection_type_, AaNoiseParams::DarkDetectionType::None, "AA_dark_detection_type", "");
-			PARAM_DECL(float , aa_dark_threshold_factor_, 0.f, "AA_dark_threshold_factor", "");
-			PARAM_DECL(int, aa_variance_edge_size_, 10, "AA_variance_edge_size", "");
-			PARAM_DECL(int, aa_variance_pixels_, 0, "AA_variance_pixels", "");
-			PARAM_DECL(float , aa_clamp_samples_, 0.f, "AA_clamp_samples", "");
-			PARAM_DECL(float , aa_clamp_indirect_, 0.f, "AA_clamp_indirect", "");
-			PARAM_DECL(int , layer_mask_obj_index_, 0, "layer_mask_obj_index", "Object Index used for masking in/out in the Mask Render Layers");
-			PARAM_DECL(int , layer_mask_mat_index_, 0, "layer_mask_mat_index", "Material Index used for masking in/out in the Mask Render Layers");
-			PARAM_DECL(bool , layer_mask_invert, false, "layer_mask_invert", "False=mask in, True=mask out");
-			PARAM_DECL(bool , layer_mask_only_, false, "layer_mask_only", "False=rendered image is masked, True=only the mask is shown without rendered image");
-			PARAM_DECL(Rgb , layer_toon_edge_color_, Rgb{0.f}, "layer_toon_edge_color", "Color of the edges used in the Toon Render Layers");
-			PARAM_DECL(int , layer_object_edge_thickness_, 2, "layer_object_edge_thickness", "Thickness of the edges used in the Object Edge and Toon Render Layers");
-			PARAM_DECL(float , layer_object_edge_threshold_, 0.3f, "layer_object_edge_threshold", "Threshold for the edge detection process used in the Object Edge and Toon Render Layers");
-			PARAM_DECL(float , layer_object_edge_smoothness_, 0.75f, "layer_object_edge_smoothness", "Smoothness (blur) of the edges used in the Object Edge and Toon Render Layers");
-			PARAM_DECL(float , layer_toon_pre_smooth_, 3.f, "layer_toon_pre_smooth", "Toon effect: smoothness applied to the original image");
-			PARAM_DECL(float , layer_toon_quantization_, 0.1f, "layer_toon_quantization", "Toon effect: color Quantization applied to the original image");
-			PARAM_DECL(float , layer_toon_post_smooth_, 3.f, "layer_toon_post_smooth", "Toon effect: smoothness applied after Quantization");
-			PARAM_DECL(int , layer_faces_edge_thickness_, 1, "layer_faces_edge_thickness", "Thickness of the edges used in the Faces Edge Render Layers");
-			PARAM_DECL(float , layer_faces_edge_threshold_, 0.01f, "layer_faces_edge_threshold", "Threshold for the edge detection process used in the Faces Edge Render Layers");
-			PARAM_DECL(float , layer_faces_edge_smoothness_, 0.5f, "layer_faces_edge_smoothness", "Smoothness (blur) of the edges used in the Faces Edge Render Layers");
 		} params_;
 		SurfaceIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 
@@ -153,42 +123,7 @@ class SurfaceIntegrator
 		ImageFilm *image_film_{nullptr};
 		const Background *background_{nullptr};
 		const Accelerator *accelerator_{nullptr};
-
-		AaNoiseParams aa_noise_params_{
-				params_.aa_samples_,
-				params_.aa_passes_,
-				params_.aa_inc_samples_,
-				params_.aa_threshold_,
-				params_.aa_resampled_floor_,
-				params_.aa_sample_multiplier_factor_,
-				params_.aa_light_sample_multiplier_factor_,
-				params_.aa_indirect_sample_multiplier_factor_,
-				params_.aa_detect_color_noise_,
-				params_.aa_dark_detection_type_,
-				params_.aa_dark_threshold_factor_,
-				params_.aa_variance_edge_size_,
-				params_.aa_variance_pixels_,
-				params_.aa_clamp_samples_,
-				params_.aa_clamp_indirect_,
-		};
-		const MaskParams mask_params_{
-				params_.layer_mask_obj_index_,
-				params_.layer_mask_mat_index_,
-				params_.layer_mask_invert,
-				params_.layer_mask_only_,
-		};
-		const EdgeToonParams edge_toon_params_{
-				params_.layer_object_edge_thickness_,
-				params_.layer_object_edge_threshold_,
-				params_.layer_object_edge_smoothness_,
-				params_.layer_toon_edge_color_,
-				params_.layer_toon_pre_smooth_,
-				params_.layer_toon_quantization_,
-				params_.layer_toon_post_smooth_,
-				params_.layer_faces_edge_thickness_,
-				params_.layer_faces_edge_threshold_,
-				params_.layer_faces_edge_smoothness_,
-		};
+		const AaNoiseParams *aa_noise_params_{nullptr};
 		FastRandom fast_random_;
 
 	private:

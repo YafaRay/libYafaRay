@@ -99,42 +99,42 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 {
 	std::stringstream pass_string;
 	std::stringstream aa_settings;
-	aa_settings << " passes=" << aa_noise_params_.passes_;
-	aa_settings << " samples=" << aa_noise_params_.samples_ << " inc_samples=" << aa_noise_params_.inc_samples_ << " resamp.floor=" << aa_noise_params_.resampled_floor_ << "\nsample.mul=" << aa_noise_params_.sample_multiplier_factor_ << " light.sam.mul=" << aa_noise_params_.light_sample_multiplier_factor_ << " ind.sam.mul=" << aa_noise_params_.indirect_sample_multiplier_factor_ << "\ncol.noise=" << aa_noise_params_.detect_color_noise_;
+	aa_settings << " passes=" << aa_noise_params_->passes_;
+	aa_settings << " samples=" << aa_noise_params_->samples_ << " inc_samples=" << aa_noise_params_->inc_samples_ << " resamp.floor=" << aa_noise_params_->resampled_floor_ << "\nsample.mul=" << aa_noise_params_->sample_multiplier_factor_ << " light.sam.mul=" << aa_noise_params_->light_sample_multiplier_factor_ << " ind.sam.mul=" << aa_noise_params_->indirect_sample_multiplier_factor_ << "\ncol.noise=" << aa_noise_params_->detect_color_noise_;
 
-	if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear) aa_settings << " AA thr(lin)=" << aa_noise_params_.threshold_ << ",dark_fac=" << aa_noise_params_.dark_threshold_factor_;
-	else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve) aa_settings << " AA.thr(curve)";
-	else aa_settings << " AA thr=" << aa_noise_params_.threshold_;
+	if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear) aa_settings << " AA thr(lin)=" << aa_noise_params_->threshold_ << ",dark_fac=" << aa_noise_params_->dark_threshold_factor_;
+	else if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve) aa_settings << " AA.thr(curve)";
+	else aa_settings << " AA thr=" << aa_noise_params_->threshold_;
 
-	aa_settings << " var.edge=" << aa_noise_params_.variance_edge_size_ << " var.pix=" << aa_noise_params_.variance_pixels_ << " clamp=" << aa_noise_params_.clamp_samples_ << " ind.clamp=" << aa_noise_params_.clamp_indirect_;
+	aa_settings << " var.edge=" << aa_noise_params_->variance_edge_size_ << " var.pix=" << aa_noise_params_->variance_pixels_ << " clamp=" << aa_noise_params_->clamp_samples_ << " ind.clamp=" << aa_noise_params_->clamp_indirect_;
 	render_monitor.setAaNoiseInfo(render_monitor.getAaNoiseInfo() + aa_settings.str());
-	render_monitor.setTotalPasses(aa_noise_params_.passes_);
+	render_monitor.setTotalPasses(aa_noise_params_->passes_);
 
-	int aa_resampled_floor_pixels = (int) floorf(aa_noise_params_.resampled_floor_ * (float) image_film_->getTotalPixels() / 100.f);
+	int aa_resampled_floor_pixels = (int) floorf(aa_noise_params_->resampled_floor_ * (float) image_film_->getTotalPixels() / 100.f);
 
-	logger_.logParams(getName(), ": Rendering ", aa_noise_params_.passes_, " passes");
-	logger_.logParams("Min. ", aa_noise_params_.samples_, " samples");
-	logger_.logParams(aa_noise_params_.inc_samples_, " per additional pass");
-	logger_.logParams("Resampled pixels floor: ", aa_noise_params_.resampled_floor_, "% (", aa_resampled_floor_pixels, " pixels)");
+	logger_.logParams(getName(), ": Rendering ", aa_noise_params_->passes_, " passes");
+	logger_.logParams("Min. ", aa_noise_params_->samples_, " samples");
+	logger_.logParams(aa_noise_params_->inc_samples_, " per additional pass");
+	logger_.logParams("Resampled pixels floor: ", aa_noise_params_->resampled_floor_, "% (", aa_resampled_floor_pixels, " pixels)");
 	if(logger_.isVerbose())
 	{
-		logger_.logVerbose("AA_sample_multiplier_factor: ", aa_noise_params_.sample_multiplier_factor_);
-		logger_.logVerbose("AA_light_sample_multiplier_factor: ", aa_noise_params_.light_sample_multiplier_factor_);
-		logger_.logVerbose("AA_indirect_sample_multiplier_factor: ", aa_noise_params_.indirect_sample_multiplier_factor_);
-		logger_.logVerbose("AA_detect_color_noise: ", aa_noise_params_.detect_color_noise_);
+		logger_.logVerbose("AA_sample_multiplier_factor: ", aa_noise_params_->sample_multiplier_factor_);
+		logger_.logVerbose("AA_light_sample_multiplier_factor: ", aa_noise_params_->light_sample_multiplier_factor_);
+		logger_.logVerbose("AA_indirect_sample_multiplier_factor: ", aa_noise_params_->indirect_sample_multiplier_factor_);
+		logger_.logVerbose("AA_detect_color_noise: ", aa_noise_params_->detect_color_noise_);
 
-		if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear) logger_.logVerbose("AA_threshold (linear): ", aa_noise_params_.threshold_, ", dark factor: ", aa_noise_params_.dark_threshold_factor_);
-		else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve) logger_.logVerbose("AA_threshold (curve)");
-		else logger_.logVerbose("AA threshold:", aa_noise_params_.threshold_);
+		if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear) logger_.logVerbose("AA_threshold (linear): ", aa_noise_params_->threshold_, ", dark factor: ", aa_noise_params_->dark_threshold_factor_);
+		else if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve) logger_.logVerbose("AA_threshold (curve)");
+		else logger_.logVerbose("AA threshold:", aa_noise_params_->threshold_);
 
-		logger_.logVerbose("AA_variance_edge_size: ", aa_noise_params_.variance_edge_size_);
-		logger_.logVerbose("AA_variance_pixels: ", aa_noise_params_.variance_pixels_);
-		logger_.logVerbose("AA_clamp_samples: ", aa_noise_params_.clamp_samples_);
-		logger_.logVerbose("AA_clamp_indirect: ", aa_noise_params_.clamp_indirect_);
+		logger_.logVerbose("AA_variance_edge_size: ", aa_noise_params_->variance_edge_size_);
+		logger_.logVerbose("AA_variance_pixels: ", aa_noise_params_->variance_pixels_);
+		logger_.logVerbose("AA_clamp_samples: ", aa_noise_params_->clamp_samples_);
+		logger_.logVerbose("AA_clamp_indirect: ", aa_noise_params_->clamp_indirect_);
 	}
-	logger_.logParams("Max. ", aa_noise_params_.samples_ + std::max(0, aa_noise_params_.passes_ - 1) * aa_noise_params_.inc_samples_, " total samples");
+	logger_.logParams("Max. ", aa_noise_params_->samples_ + std::max(0, aa_noise_params_->passes_ - 1) * aa_noise_params_->inc_samples_, " total samples");
 
-	pass_string << "Rendering pass 1 of " << std::max(1, aa_noise_params_.passes_) << "...";
+	pass_string << "Rendering pass 1 of " << std::max(1, aa_noise_params_->passes_) << "...";
 
 	logger_.logInfo(pass_string.str());
 	render_monitor.setProgressBarTag(pass_string.str());
@@ -167,36 +167,36 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 		renderPass(render_control, render_monitor, correlative_sample_number, 0, image_film_->getSamplingOffset(), false, 0, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 	}
 	else
-		renderPass(render_control, render_monitor, correlative_sample_number, aa_noise_params_.samples_, 0, false, 0, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
+		renderPass(render_control, render_monitor, correlative_sample_number, aa_noise_params_->samples_, 0, false, 0, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
 	bool aa_threshold_changed = true;
-	int acum_aa_samples = aa_noise_params_.samples_;
-	image_film_->setAaThresholdCalculated(aa_noise_params_.threshold_);
+	int acum_aa_samples = aa_noise_params_->samples_;
+	image_film_->setAaThresholdCalculated(aa_noise_params_->threshold_);
 
-	for(int i = 1; i < aa_noise_params_.passes_; ++i)
+	for(int i = 1; i < aa_noise_params_->passes_; ++i)
 	{
 		if(render_control.canceled()) break;
 
-		aa_sample_multiplier *= aa_noise_params_.sample_multiplier_factor_;
-		aa_light_sample_multiplier *= aa_noise_params_.light_sample_multiplier_factor_;
-		aa_indirect_sample_multiplier *= aa_noise_params_.indirect_sample_multiplier_factor_;
+		aa_sample_multiplier *= aa_noise_params_->sample_multiplier_factor_;
+		aa_light_sample_multiplier *= aa_noise_params_->light_sample_multiplier_factor_;
+		aa_indirect_sample_multiplier *= aa_noise_params_->indirect_sample_multiplier_factor_;
 
 		logger_.logInfo(getName(), ": Sample multiplier = ", aa_sample_multiplier, ", Light Sample multiplier = ", aa_light_sample_multiplier, ", Indirect Sample multiplier = ", aa_indirect_sample_multiplier);
 
 		if(resampled_pixels <= 0.f && !aa_threshold_changed)
 		{
 			logger_.logInfo(getName(), ": in previous pass there were 0 pixels to be resampled and the AA threshold did not change, so this pass resampling check and rendering will be skipped.");
-			image_film_->nextPass(render_control, render_monitor, true, getName(), edge_toon_params_, /*skipNextPass=*/true);
+			image_film_->nextPass(render_control, render_monitor, true, getName(), /*skipNextPass=*/true);
 		}
 		else
 		{
-			resampled_pixels = image_film_->nextPass(render_control, render_monitor, true, getName(), edge_toon_params_);
+			resampled_pixels = image_film_->nextPass(render_control, render_monitor, true, getName());
 			aa_threshold_changed = false;
 		}
 
-		int aa_samples_mult = (int) ceilf(aa_noise_params_.inc_samples_ * aa_sample_multiplier);
+		int aa_samples_mult = (int) ceilf(aa_noise_params_->inc_samples_ * aa_sample_multiplier);
 
-		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_.samples_, " AA_samples_mult=", aa_samples_mult);
+		if(logger_.isDebug())logger_.logDebug("acumAASamples=", acum_aa_samples, " AA_samples=", aa_noise_params_->samples_, " AA_samples_mult=", aa_samples_mult);
 
 		if(resampled_pixels > 0) renderPass(render_control, render_monitor, correlative_sample_number, aa_samples_mult, acum_aa_samples, true, i, aa_light_sample_multiplier, aa_indirect_sample_multiplier);
 
@@ -207,9 +207,9 @@ bool TiledIntegrator::render(RenderControl &render_control, RenderMonitor &rende
 			float aa_variation_ratio = std::min(8.f, ((float) aa_resampled_floor_pixels / resampled_pixels)); //This allows the variation for the new pass in the AA threshold and AA samples to depend, with a certain maximum per pass, on the ratio between how many pixeles were resampled and the target floor, to get a faster approach for noise removal.
 			image_film_->setAaThresholdCalculated(image_film_->getAaThresholdCalculated() * (1.f - 0.1f * aa_variation_ratio));
 
-			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Resampled pixels (", resampled_pixels, ") below the floor (", aa_resampled_floor_pixels, "): new AA Threshold (-", aa_variation_ratio * 0.1f * 100.f, "%) for next pass = ", aa_noise_params_.threshold_);
+			if(logger_.isVerbose()) logger_.logVerbose(getName(), ": Resampled pixels (", resampled_pixels, ") below the floor (", aa_resampled_floor_pixels, "): new AA Threshold (-", aa_variation_ratio * 0.1f * 100.f, "%) for next pass = ", aa_noise_params_->threshold_);
 
-			if(aa_noise_params_.threshold_ > 0.f) aa_threshold_changed = true;
+			if(aa_noise_params_->threshold_ > 0.f) aa_threshold_changed = true;
 		}
 	}
 	render_monitor.stopTimer("rendert");
@@ -240,7 +240,7 @@ bool TiledIntegrator::renderPass(RenderControl &render_control, RenderMonitor &r
 		tc.c_.wait(lk);
 		for(const auto &area : tc.areas_)
 		{
-			image_film_->finishArea(render_control, render_monitor, area, edge_toon_params_);
+			image_film_->finishArea(render_control, render_monitor, area);
 		}
 		tc.areas_.clear();
 	}
@@ -256,10 +256,10 @@ bool TiledIntegrator::renderTile(std::vector<int> &correlative_sample_number, co
 	RandomGenerator random_generator(rand() + offset * (camera_res_x * a.y_ + a.x_) + 123);
 	const bool sample_lns = image_film_->getCamera()->sampleLens();
 	const int pass_offs = offset, end_x = a.x_ + a.w_, end_y = a.y_ + a.h_;
-	int aa_max_possible_samples = aa_noise_params_.samples_;
-	for(int i = 1; i < aa_noise_params_.passes_; ++i)
+	int aa_max_possible_samples = aa_noise_params_->samples_;
+	for(int i = 1; i < aa_noise_params_->passes_; ++i)
 	{
-		aa_max_possible_samples += ceilf(aa_noise_params_.inc_samples_ * pow(aa_noise_params_.sample_multiplier_factor_, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
+		aa_max_possible_samples += ceilf(aa_noise_params_->inc_samples_ * pow(aa_noise_params_->sample_multiplier_factor_, i));	//DAVID FIXME: if the per-material sampling factor is used, values higher than 1.f will appear in the Sample Count render pass. Is that acceptable or not?
 	}
 	const float inv_aa_max_possible_samples = 1.f / static_cast<float>(aa_max_possible_samples);
 	Uv<Halton> hal{Halton{3}, Halton{5}};
@@ -311,7 +311,7 @@ bool TiledIntegrator::renderTile(std::vector<int> &correlative_sample_number, co
 				// hence we use scrambled (Sobol, van-der-Corput) for multipass AA  //!< the current (normalized) frame time  //FIXME, time not currently used in libYafaRay
 				pixel_sampling_data.time_ = time;
 				float dx = 0.5f, dy = 0.5f;
-				if(aa_noise_params_.passes_ > 1)
+				if(aa_noise_params_->passes_ > 1)
 				{
 					dx = sample::riVdC(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
 					dy = sample::riS(pixel_sampling_data.sample_, pixel_sampling_data.offset_);
@@ -359,8 +359,8 @@ bool TiledIntegrator::renderTile(std::vector<int> &correlative_sample_number, co
 						case LayerDef::MatIndexMaskAll:
 							if(layer_col.a_ > 1.f) layer_col.a_ = 1.f;
 							layer_col.clampRgb01();
-							if(mask_params_.invert_) layer_col = Rgba(1.f) - layer_col;
-							if(!mask_params_.only_)
+							if(image_film_->getMaskParams()->invert_) layer_col = Rgba(1.f) - layer_col;
+							if(!image_film_->getMaskParams()->only_)
 							{
 								Rgba col_combined = color_layers(LayerDef::Combined);
 								col_combined.a_ = 1.f;

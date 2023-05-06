@@ -404,7 +404,7 @@ std::pair<Rgb, float> BidirectionalIntegrator::integrate(Ray &ray, RandomGenerat
 		}
 		if(color_layers)
 		{
-			generateCommonLayers(color_layers, *sp, mask_params_, object_index_highest_, material_index_highest_);
+			generateCommonLayers(color_layers, *sp, *image_film_->getMaskParams(), object_index_highest_, material_index_highest_);
 			generateOcclusionLayers(color_layers, *accelerator_, chromatic_enabled, wavelength, ray_division, image_film_->getCamera(), pixel_sampling_data, *sp, wo, params_.ao_samples_, SurfaceIntegrator::params_.shadow_bias_auto_, shadow_bias_, params_.ao_distance_, params_.ao_color_, params_.shadow_depth_);
 			if(Rgba *color_layer = color_layers->find(LayerDef::DebugObjectTime))
 			{

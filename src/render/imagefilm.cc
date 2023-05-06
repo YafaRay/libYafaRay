@@ -63,6 +63,35 @@ std::map<std::string, const ParamMeta *> ImageFilm::Params::getParamMetaMap()
 	PARAM_META(film_autosave_interval_type_);
 	PARAM_META(film_autosave_interval_passes_);
 	PARAM_META(film_autosave_interval_seconds_);
+	PARAM_META(aa_passes_);
+	PARAM_META(aa_samples_);
+	PARAM_META(aa_inc_samples_);
+	PARAM_META(aa_threshold_);
+	PARAM_META(aa_resampled_floor_);
+	PARAM_META(aa_sample_multiplier_factor_);
+	PARAM_META(aa_light_sample_multiplier_factor_);
+	PARAM_META(aa_indirect_sample_multiplier_factor_);
+	PARAM_META(aa_detect_color_noise_);
+	PARAM_META(aa_dark_detection_type_);
+	PARAM_META(aa_dark_threshold_factor_);
+	PARAM_META(aa_variance_edge_size_);
+	PARAM_META(aa_variance_pixels_);
+	PARAM_META(aa_clamp_samples_);
+	PARAM_META(aa_clamp_indirect_);
+	PARAM_META(layer_mask_obj_index_);
+	PARAM_META(layer_mask_mat_index_);
+	PARAM_META(layer_mask_invert);
+	PARAM_META(layer_mask_only_);
+	PARAM_META(layer_toon_edge_color_);
+	PARAM_META(layer_object_edge_thickness_);
+	PARAM_META(layer_object_edge_threshold_);
+	PARAM_META(layer_object_edge_smoothness_);
+	PARAM_META(layer_toon_pre_smooth_);
+	PARAM_META(layer_toon_quantization_);
+	PARAM_META(layer_toon_post_smooth_);
+	PARAM_META(layer_faces_edge_thickness_);
+	PARAM_META(layer_faces_edge_threshold_);
+	PARAM_META(layer_faces_edge_smoothness_);
 	return param_meta_map;
 }
 
@@ -88,6 +117,35 @@ ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 	PARAM_ENUM_LOAD(film_autosave_interval_type_);
 	PARAM_LOAD(film_autosave_interval_passes_);
 	PARAM_LOAD(film_autosave_interval_seconds_);
+	PARAM_LOAD(aa_passes_);
+	PARAM_LOAD(aa_samples_);
+	PARAM_LOAD(aa_inc_samples_);
+	PARAM_LOAD(aa_threshold_);
+	PARAM_LOAD(aa_resampled_floor_);
+	PARAM_LOAD(aa_sample_multiplier_factor_);
+	PARAM_LOAD(aa_light_sample_multiplier_factor_);
+	PARAM_LOAD(aa_indirect_sample_multiplier_factor_);
+	PARAM_LOAD(aa_detect_color_noise_);
+	PARAM_ENUM_LOAD(aa_dark_detection_type_);
+	PARAM_LOAD(aa_dark_threshold_factor_);
+	PARAM_LOAD(aa_variance_edge_size_);
+	PARAM_LOAD(aa_variance_pixels_);
+	PARAM_LOAD(aa_clamp_samples_);
+	PARAM_LOAD(aa_clamp_indirect_);
+	PARAM_LOAD(layer_mask_obj_index_);
+	PARAM_LOAD(layer_mask_mat_index_);
+	PARAM_LOAD(layer_mask_invert);
+	PARAM_LOAD(layer_mask_only_);
+	PARAM_LOAD(layer_toon_edge_color_);
+	PARAM_LOAD(layer_object_edge_thickness_);
+	PARAM_LOAD(layer_object_edge_threshold_);
+	PARAM_LOAD(layer_object_edge_smoothness_);
+	PARAM_LOAD(layer_toon_pre_smooth_);
+	PARAM_LOAD(layer_toon_quantization_);
+	PARAM_LOAD(layer_toon_post_smooth_);
+	PARAM_LOAD(layer_faces_edge_thickness_);
+	PARAM_LOAD(layer_faces_edge_threshold_);
+	PARAM_LOAD(layer_faces_edge_smoothness_);
 }
 
 ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
@@ -115,6 +173,35 @@ ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 	PARAM_ENUM_SAVE(film_autosave_interval_type_);
 	PARAM_SAVE(film_autosave_interval_passes_);
 	PARAM_SAVE(film_autosave_interval_seconds_);
+	PARAM_SAVE(aa_passes_);
+	PARAM_SAVE(aa_samples_);
+	PARAM_SAVE(aa_inc_samples_);
+	PARAM_SAVE(aa_threshold_);
+	PARAM_SAVE(aa_resampled_floor_);
+	PARAM_SAVE(aa_sample_multiplier_factor_);
+	PARAM_SAVE(aa_light_sample_multiplier_factor_);
+	PARAM_SAVE(aa_indirect_sample_multiplier_factor_);
+	PARAM_SAVE(aa_detect_color_noise_);
+	PARAM_ENUM_SAVE(aa_dark_detection_type_);
+	PARAM_SAVE(aa_dark_threshold_factor_);
+	PARAM_SAVE(aa_variance_edge_size_);
+	PARAM_SAVE(aa_variance_pixels_);
+	PARAM_SAVE(aa_clamp_samples_);
+	PARAM_SAVE(aa_clamp_indirect_);
+	PARAM_SAVE(layer_mask_obj_index_);
+	PARAM_SAVE(layer_mask_mat_index_);
+	PARAM_SAVE(layer_mask_invert);
+	PARAM_SAVE(layer_mask_only_);
+	PARAM_SAVE(layer_toon_edge_color_);
+	PARAM_SAVE(layer_object_edge_thickness_);
+	PARAM_SAVE(layer_object_edge_threshold_);
+	PARAM_SAVE(layer_object_edge_smoothness_);
+	PARAM_SAVE(layer_toon_pre_smooth_);
+	PARAM_SAVE(layer_toon_quantization_);
+	PARAM_SAVE(layer_toon_post_smooth_);
+	PARAM_SAVE(layer_faces_edge_thickness_);
+	PARAM_SAVE(layer_faces_edge_threshold_);
+	PARAM_SAVE(layer_faces_edge_smoothness_);
 	return param_map;
 }
 
@@ -215,9 +302,6 @@ void ImageFilm::initLayersExportedImages()
 
 void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator)
 {
-	aa_noise_params_ = surface_integrator.getAaParameters();
-	edge_toon_params_ = surface_integrator.getEdgeToonParams();
-
 	defineBasicLayers();
 	defineDependentLayers();
 
@@ -278,7 +362,7 @@ void ImageFilm::init(RenderControl &render_control, RenderMonitor &render_monito
 	}
 }
 
-int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer)
+int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, bool skip_nrender_layer)
 {
 	next_area_ = 0;
 	n_pass_++;
@@ -312,7 +396,7 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 
 	if(n_pass_ == 0) flags_.fill(true);
 	else flags_.fill(false);
-	const int variance_half_edge = aa_noise_params_->variance_edge_size_ / 2;
+	const int variance_half_edge = aa_noise_params_.variance_edge_size_ / 2;
 	auto combined_image{film_image_layers_(LayerDef::Combined).image_};
 
 	float aa_thresh_scaled = aa_threshold_calculated_;
@@ -347,33 +431,33 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 				const Rgba pix_col = combined_image->getColor({{x, y}}).normalized(weight);
 				const float pix_col_bri = pix_col.abscol2Bri();
 
-				if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_->dark_threshold_factor_ > 0.f)
+				if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Linear && aa_noise_params_.dark_threshold_factor_ > 0.f)
 				{
-					if(aa_noise_params_->dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_threshold_calculated_ * ((1.f - aa_noise_params_->dark_threshold_factor_) + (pix_col_bri * aa_noise_params_->dark_threshold_factor_));
+					if(aa_noise_params_.dark_threshold_factor_ > 0.f) aa_thresh_scaled = aa_threshold_calculated_ * ((1.f - aa_noise_params_.dark_threshold_factor_) + (pix_col_bri * aa_noise_params_.dark_threshold_factor_));
 				}
-				else if(aa_noise_params_->dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
+				else if(aa_noise_params_.dark_detection_type_ == AaNoiseParams::DarkDetectionType::Curve)
 				{
 					aa_thresh_scaled = darkThresholdCurveInterpolate(pix_col_bri);
 				}
 
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y}}).normalized(weights_({{x + 1, y}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x, y + 1}}).normalized(weights_({{x, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x, y + 1}}, true);
 				}
-				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
+				if(pix_col.colorDifference(combined_image->getColor({{x + 1, y + 1}}).normalized(weights_({{x + 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x + 1, y + 1}}, true);
 				}
-				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled)
+				if(x > 0 && pix_col.colorDifference(combined_image->getColor({{x - 1, y + 1}}).normalized(weights_({{x - 1, y + 1}}).getFloat()), aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled)
 				{
 					flags_.set({{x, y}}, true); flags_.set({{x - 1, y + 1}}, true);
 				}
 
-				if(aa_noise_params_->variance_pixels_ > 0)
+				if(aa_noise_params_.variance_pixels_ > 0)
 				{
 					int variance_x = 0, variance_y = 0;//, pixelcount = 0;
 
@@ -388,7 +472,7 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 						const Rgba cx_0 = combined_image->getColor({{xi, y}}).normalized(weights_({{xi, y}}).getFloat());
 						const Rgba cx_1 = combined_image->getColor({{xi + 1, y}}).normalized(weights_({{xi + 1, y}}).getFloat());
 
-						if(cx_0.colorDifference(cx_1, aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
+						if(cx_0.colorDifference(cx_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_x;
 					}
 
 					for(int yd = -variance_half_edge; yd < variance_half_edge - 1 ; ++yd)
@@ -400,10 +484,10 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 						const Rgba cy_0 = combined_image->getColor({{x, yi}}).normalized(weights_({{x, yi}}).getFloat());
 						const Rgba cy_1 = combined_image->getColor({{x, yi + 1}}).normalized(weights_({{x, yi + 1}}).getFloat());
 
-						if(cy_0.colorDifference(cy_1, aa_noise_params_->detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
+						if(cy_0.colorDifference(cy_1, aa_noise_params_.detect_color_noise_) >= aa_thresh_scaled) ++variance_y;
 					}
 
-					if(variance_x + variance_y >= aa_noise_params_->variance_pixels_)
+					if(variance_x + variance_y >= aa_noise_params_.variance_pixels_)
 					{
 						for(int xd = -variance_half_edge; xd < variance_half_edge; ++xd)
 						{
@@ -451,7 +535,7 @@ int ImageFilm::nextPass(RenderControl &render_control, RenderMonitor &render_mon
 
 	if(render_control.resumed()) pass_string << "Film loaded + ";
 
-	pass_string << "Rendering pass " << n_pass_ << " of " << aa_noise_params_->passes_ << ", resampling " << n_resample << " pixels.";
+	pass_string << "Rendering pass " << n_pass_ << " of " << aa_noise_params_.passes_ << ", resampling " << n_resample << " pixels.";
 
 	logger_.logInfo(integrator_name, ": ", pass_string.str());
 
@@ -501,7 +585,7 @@ bool ImageFilm::nextArea(RenderArea &a)
 	return false;
 }
 
-void ImageFilm::finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a, const EdgeToonParams &edge_params)
+void ImageFilm::finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a)
 {
 	std::lock_guard<std::mutex> lock_guard(out_mutex_);
 	const int end_x = a.x_ + a.w_ - params_.start_x_;
@@ -509,12 +593,12 @@ void ImageFilm::finishArea(RenderControl &render_control, RenderMonitor &render_
 
 	if(layers_.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_params, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_toon_params_, weights_);
 	}
 
 	if(layers_.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_params, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, a.x_ - params_.start_x_, end_x, a.y_ - params_.start_y_, end_y, true, edge_toon_params_, weights_);
 	}
 
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
@@ -592,11 +676,11 @@ void ImageFilm::flush(RenderControl &render_control, RenderMonitor &render_monit
 	const Layers layers = layers_.getLayersWithImages();
 	if(layers.isDefined(LayerDef::DebugFacesEdges))
 	{
-		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, *edge_toon_params_, weights_);
+		image_manipulation::generateDebugFacesEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_toon_params_, weights_);
 	}
 	if(layers.isDefinedAny({LayerDef::DebugObjectsEdges, LayerDef::Toon}))
 	{
-		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, *edge_toon_params_, weights_);
+		image_manipulation::generateToonAndDebugObjectEdges(film_image_layers_, 0, params_.width_, 0, params_.height_, false, edge_toon_params_, weights_);
 	}
 	for(const auto &[layer_def, image_layer] : film_image_layers_)
 	{
@@ -729,7 +813,7 @@ void ImageFilm::addSample(const Point2i &point, float dx, float dy, const Render
 			for(auto &[layer_def, image_layer] : film_image_layers_)
 			{
 				Rgba col = color_layers ? (*color_layers)(layer_def) : Rgba{0.f};
-				col.clampProportionalRgb(aa_noise_params_->clamp_samples_);
+				col.clampProportionalRgb(aa_noise_params_.clamp_samples_);
 				image_layer.image_->addColor({{i - params_.start_x_, j - params_.start_y_}}, col * filter_wt);
 			}
 		}

@@ -36,6 +36,8 @@
 #include "image/image_layers.h"
 #include "common/timer.h"
 #include "geometry/rect.h"
+#include "common/aa_noise_params.h"
+#include "common/mask_edge_toon_params.h"
 #include <mutex>
 #include <atomic>
 #include <utility>
@@ -47,7 +49,6 @@ class ImageOutput;
 class ColorLayers;
 class RenderControl;
 class Timer;
-struct EdgeToonParams;
 class SurfaceIntegrator;
 class Camera;
 template <typename T> class Items;
@@ -71,13 +72,13 @@ class ImageFilm final
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
 			\param adaptive_aa if true, flag pixels to be resampled
 			\param threshold color threshold for adaptive antialiasing */
-		int nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, const EdgeToonParams &edge_params, bool skip_nrender_layer = false);
+		int nextPass(RenderControl &render_control, RenderMonitor &render_monitor, bool adaptive_aa, const std::string &integrator_name, bool skip_nrender_layer = false);
 		/*! Return the next area to be rendered
 			CAUTION! This method MUST be threadsafe!
 			\return false if no area is left to be handed out, true otherwise */
 		bool nextArea(RenderArea &a);
 		/*! Indicate that all pixels inside the area have been sampled for this pass */
-		void finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a, const EdgeToonParams &edge_params);
+		void finishArea(RenderControl &render_control, RenderMonitor &render_monitor, const RenderArea &a);
 		/*! Output all pixels to the color output */
 		void flush(RenderControl &render_control, RenderMonitor &render_monitor, Flags flags);
 		/*! query if sample (x,y) was flagged to need more samples.
@@ -132,6 +133,9 @@ class ImageFilm final
 		void setMinDepth(float min_depth) { min_depth_ = min_depth; }
 		float getAaThresholdCalculated() const { return aa_threshold_calculated_; }
 		void setAaThresholdCalculated(float aa_threshold_calculated) { aa_threshold_calculated_ = aa_threshold_calculated; }
+		const EdgeToonParams *getEdgeToonParams() const { return &edge_toon_params_; }
+		const AaNoiseParams *getAaParameters() const { return &aa_noise_params_; }
+		const MaskParams *getMaskParams() const { return &mask_params_; }
 
 	private:
 		struct FilterType : public Enum<FilterType>
@@ -202,6 +206,35 @@ class ImageFilm final
 			PARAM_ENUM_DECL(AutoSaveParams::IntervalType, film_autosave_interval_type_, AutoSaveParams::IntervalType::None, "film_autosave_interval_type", "");
 			PARAM_DECL(int, film_autosave_interval_passes_, 1, "film_autosave_interval_passes", "");
 			PARAM_DECL(float, film_autosave_interval_seconds_, 300.f, "film_autosave_interval_seconds", "");
+			PARAM_DECL(int, aa_passes_, 1, "AA_passes", "");
+			PARAM_DECL(int, aa_samples_, 1, "AA_minsamples", "Sample count for first pass");
+			PARAM_DECL(int, aa_inc_samples_, 1, "AA_inc_samples", "Sample count for additional passes");
+			PARAM_DECL(float , aa_threshold_, 0.05f, "AA_threshold", "");
+			PARAM_DECL(float , aa_resampled_floor_, 0.f, "AA_resampled_floor", "Minimum amount of resampled pixels (% of the total pixels) below which we will automatically decrease the threshold value for the next pass");
+			PARAM_DECL(float , aa_sample_multiplier_factor_, 1.f, "AA_sample_multiplier_factor", "");
+			PARAM_DECL(float , aa_light_sample_multiplier_factor_, 1.f, "AA_light_sample_multiplier_factor", "");
+			PARAM_DECL(float , aa_indirect_sample_multiplier_factor_, 1.f, "AA_indirect_sample_multiplier_factor", "");
+			PARAM_DECL(bool , aa_detect_color_noise_, false, "AA_detect_color_noise", "");
+			PARAM_ENUM_DECL(AaNoiseParams::DarkDetectionType, aa_dark_detection_type_, AaNoiseParams::DarkDetectionType::None, "AA_dark_detection_type", "");
+			PARAM_DECL(float , aa_dark_threshold_factor_, 0.f, "AA_dark_threshold_factor", "");
+			PARAM_DECL(int, aa_variance_edge_size_, 10, "AA_variance_edge_size", "");
+			PARAM_DECL(int, aa_variance_pixels_, 0, "AA_variance_pixels", "");
+			PARAM_DECL(float , aa_clamp_samples_, 0.f, "AA_clamp_samples", "");
+			PARAM_DECL(float , aa_clamp_indirect_, 0.f, "AA_clamp_indirect", "");
+			PARAM_DECL(int , layer_mask_obj_index_, 0, "layer_mask_obj_index", "Object Index used for masking in/out in the Mask Render Layers");
+			PARAM_DECL(int , layer_mask_mat_index_, 0, "layer_mask_mat_index", "Material Index used for masking in/out in the Mask Render Layers");
+			PARAM_DECL(bool , layer_mask_invert, false, "layer_mask_invert", "False=mask in, True=mask out");
+			PARAM_DECL(bool , layer_mask_only_, false, "layer_mask_only", "False=rendered image is masked, True=only the mask is shown without rendered image");
+			PARAM_DECL(Rgb , layer_toon_edge_color_, Rgb{0.f}, "layer_toon_edge_color", "Color of the edges used in the Toon Render Layers");
+			PARAM_DECL(int , layer_object_edge_thickness_, 2, "layer_object_edge_thickness", "Thickness of the edges used in the Object Edge and Toon Render Layers");
+			PARAM_DECL(float , layer_object_edge_threshold_, 0.3f, "layer_object_edge_threshold", "Threshold for the edge detection process used in the Object Edge and Toon Render Layers");
+			PARAM_DECL(float , layer_object_edge_smoothness_, 0.75f, "layer_object_edge_smoothness", "Smoothness (blur) of the edges used in the Object Edge and Toon Render Layers");
+			PARAM_DECL(float , layer_toon_pre_smooth_, 3.f, "layer_toon_pre_smooth", "Toon effect: smoothness applied to the original image");
+			PARAM_DECL(float , layer_toon_quantization_, 0.1f, "layer_toon_quantization", "Toon effect: color Quantization applied to the original image");
+			PARAM_DECL(float , layer_toon_post_smooth_, 3.f, "layer_toon_post_smooth", "Toon effect: smoothness applied after Quantization");
+			PARAM_DECL(int , layer_faces_edge_thickness_, 1, "layer_faces_edge_thickness", "Thickness of the edges used in the Faces Edge Render Layers");
+			PARAM_DECL(float , layer_faces_edge_threshold_, 0.01f, "layer_faces_edge_threshold", "Threshold for the edge detection process used in the Faces Edge Render Layers");
+			PARAM_DECL(float , layer_faces_edge_smoothness_, 0.5f, "layer_faces_edge_smoothness", "Smoothness (blur) of the edges used in the Faces Edge Render Layers");
 		} params_;
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 
@@ -267,8 +300,42 @@ class ImageFilm final
 		void *flush_callback_data_ = nullptr;
 		yafaray_FilmHighlightAreaCallback highlight_area_callback_ = nullptr;
 		void *highlight_area_callback_data_ = nullptr;
-		const AaNoiseParams *aa_noise_params_{nullptr};
-		const EdgeToonParams *edge_toon_params_{nullptr};
+
+		AaNoiseParams aa_noise_params_{
+				params_.aa_samples_,
+				params_.aa_passes_,
+				params_.aa_inc_samples_,
+				params_.aa_threshold_,
+				params_.aa_resampled_floor_,
+				params_.aa_sample_multiplier_factor_,
+				params_.aa_light_sample_multiplier_factor_,
+				params_.aa_indirect_sample_multiplier_factor_,
+				params_.aa_detect_color_noise_,
+				params_.aa_dark_detection_type_,
+				params_.aa_dark_threshold_factor_,
+				params_.aa_variance_edge_size_,
+				params_.aa_variance_pixels_,
+				params_.aa_clamp_samples_,
+				params_.aa_clamp_indirect_,
+		};
+		const MaskParams mask_params_{
+				params_.layer_mask_obj_index_,
+				params_.layer_mask_mat_index_,
+				params_.layer_mask_invert,
+				params_.layer_mask_only_,
+		};
+		const EdgeToonParams edge_toon_params_{
+				params_.layer_object_edge_thickness_,
+				params_.layer_object_edge_threshold_,
+				params_.layer_object_edge_smoothness_,
+				params_.layer_toon_edge_color_,
+				params_.layer_toon_pre_smooth_,
+				params_.layer_toon_quantization_,
+				params_.layer_toon_post_smooth_,
+				params_.layer_faces_edge_thickness_,
+				params_.layer_faces_edge_threshold_,
+				params_.layer_faces_edge_smoothness_,
+		};
 		Logger &logger_;
 };
 
