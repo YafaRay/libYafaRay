@@ -52,6 +52,8 @@ param_result.wrong_type_params_.emplace_back(param_name##meta_.name()); }
 
 #define PARAM_SAVE(name) if(!only_non_default || !Params::name##meta_.isDefault(params_.name)) param_map.setParam(Params::name##meta_, params_.name)
 
+#define PARAM_SAVE_VARIABLE(name, variable) if(!only_non_default || !Params::name##meta_.isDefault(variable)) param_map.setParam(Params::name##meta_, variable)
+
 #define PARAM_ENUM_SAVE(name) if(!only_non_default || !Params::name##meta_.isDefault(params_.name.value())) param_map.setParam(Params::name##meta_, params_.name.print())
 
 #define CHECK_PARAM_NOT_DEFAULT(name) params_.name != Params::name##meta_.getDefault<decltype(params_.name)>()

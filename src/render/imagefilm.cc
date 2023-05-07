@@ -151,8 +151,8 @@ ImageFilm::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 ParamMap ImageFilm::getAsParamMap(bool only_non_default) const
 {
 	ParamMap param_map;
-	param_map.setParam(Params::computer_node_meta_, computer_node_);
-	param_map.setParam(Params::base_sampling_offset_meta_, base_sampling_offset_);
+	PARAM_SAVE_VARIABLE(computer_node_, computer_node_);
+	PARAM_SAVE_VARIABLE(base_sampling_offset_, base_sampling_offset_);
 	PARAM_SAVE(threads_);
 	PARAM_SAVE(background_resampling_);
 	PARAM_SAVE(base_sampling_offset_);
