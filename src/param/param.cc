@@ -312,11 +312,15 @@ void writeMatrix(const std::string &matrix_name, const Matrix4f &m, std::strings
 	}
 }
 
-std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map, const std::vector<std::string> &excluded_params_meta) const
+std::string ParamMap::exportMap(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map, const std::vector<std::string> &excluded_params_meta) const
 {
 	std::stringstream ss;
 	for(const auto &[param_name, param] : items_)
 	{
+		for(size_t i = 0; i < indent_level; ++i)
+		{
+			ss << "\t";
+		}
 		const Parameter::Type type = param.type();
 		if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
 		{
@@ -474,17 +478,20 @@ std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_typ
 			const auto param_meta{findPointerInMap(param_meta_map, param_name)};
 			if(param_meta)
 			{
-				if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+				if(!param_meta->desc().empty())
 				{
-					ss << " /* " << param_meta->desc() << " */";
-				}
-				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
-				{
-					ss << " #" << param_meta->desc();
-				}
-				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
-				{
-					ss << " <!-- " << param_meta->desc() << " -->";
+					if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+					{
+						ss << " /* " << param_meta->desc() << " */";
+					}
+					else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+					{
+						ss << " #" << param_meta->desc();
+					}
+					else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+					{
+						ss << " <!-- " << param_meta->desc() << " -->";
+					}
 				}
 			}
 			else

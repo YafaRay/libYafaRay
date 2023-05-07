@@ -42,6 +42,7 @@ typedef Vec<float, 3> Vec3f;
 class Camera;
 class Rgb;
 class Light;
+class ParamMeta;
 
 enum class MotionBlurType : unsigned char { None, Bezier };
 
@@ -49,6 +50,8 @@ class Primitive
 {
 	public:
 		virtual ~Primitive() = default;
+		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const { return {}; }
+		[[nodiscard]] virtual std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const = 0;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound<float> getBound() const = 0;
 		virtual Bound<float> getBound(const Matrix4f &obj_to_world) const = 0;

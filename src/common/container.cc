@@ -122,7 +122,7 @@ std::string Container::createExportStartSection(yafaray_ContainerExportType cont
 	{
 		ss << std::boolalpha;
 		ss << "<?xml version=\"1.0\"?>\n";
-		ss << "<yafaray_xml format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n\n";
+		ss << "<yafaray_xml format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n";
 	}
 	return ss.str();
 }

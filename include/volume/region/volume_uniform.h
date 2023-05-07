@@ -31,6 +31,7 @@ class UniformVolumeRegion : public VolumeRegion
 	public:
 		inline static std::string getClassName() { return "UniformVolumeRegion"; }
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		UniformVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);

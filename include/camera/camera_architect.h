@@ -34,6 +34,7 @@ class ArchitectCamera final : public PerspectiveCamera
 	public:
 		inline static std::string getClassName() { return "ArchitectCamera"; }
 		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		ArchitectCamera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 

@@ -133,6 +133,17 @@ bool CurveObject::calculateObject(size_t material_id)
 	return ParentClassType_t::calculateObject(material_id);
 }
 
+std::string CurveObject::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t<object>" << std::endl;
+	ss << "\t\t\t<object_parameters name=\"" << getName() << "\">" << std::endl;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << param_map.exportMap(4, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t\t</object_parameters>" << std::endl;
+	ss << "\t\t</object>" << std::endl;
+	return ss.str();
+}
 
 
 } //namespace yafaray

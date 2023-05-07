@@ -186,4 +186,18 @@ void NodeMaterial::parseNodes(Logger &logger, std::vector<const ShaderNode *> &r
 	}
 }
 
+std::string NodeMaterial::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t<material name=\"" << getName() << "\">" << std::endl;
+	for(const auto &[node_name, node] : nodes_map_)
+	{
+		if(node) ss << node->exportToString(container_export_type, only_export_non_default_parameters);
+	}
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t</material>" << std::endl;
+	return ss.str();
+}
+
 } //namespace yafaray

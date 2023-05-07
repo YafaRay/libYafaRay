@@ -244,9 +244,12 @@ bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &ren
 std::string SurfaceIntegrator::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << getClassName() << " '" << getName() << "'" << std::endl;
+	ss << "\t<surface_integrator>" << std::endl;
+	ss << "\t\t<surface_integrator_parameters name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t</surface_integratorparameters>" << std::endl;
+	ss << "\t</surface_integrator>" << std::endl;
 	return ss.str();
 }
 

@@ -33,6 +33,7 @@ class AcceleratorSimpleTest final : public Accelerator
 	public:
 		inline static std::string getClassName() { return "AcceleratorKdTree"; }
 		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &params);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		AcceleratorSimpleTest(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const std::vector<const Primitive *> &primitives, const ParamMap &param_map);
 

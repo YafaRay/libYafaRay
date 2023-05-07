@@ -445,7 +445,19 @@ void Scene::setAcceleratorParamMap(const ParamMap &param_map)
 std::string Scene::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << getClassName() << " '" << getName() << "'" << std::endl;
+	ss << "\t<scene>" << std::endl;
+	ss << "\t\t<scene_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << "\t\t</scene_parameters>" << std::endl;
+	if(accelerator_) ss << accelerator_->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : images_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : textures_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : materials_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	if(background_) ss << background_->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : lights_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : objects_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &item : instances_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : volume_regions_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
+	ss << "\t</scene>" << std::endl;
 	return ss.str();
 }
 

@@ -1434,9 +1434,12 @@ ParamResult ImageFilm::defineCamera(const std::string &name, const ParamMap &par
 std::string ImageFilm::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << getClassName() << " '" << getName() << "'" << std::endl;
+	ss << "\t<film>" << std::endl;
+	ss << "\t\t<film_parameters name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
+	ss << "\t\t</film_parameters>" << std::endl;
+	ss << "\t</film>" << std::endl;
 	return ss.str();
 }
 

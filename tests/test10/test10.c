@@ -516,18 +516,18 @@ int main()
 	yafaray_setParamMapString(param_map, "image_path", "./test10-output2.tga");
 	yafaray_createOutput(film_2, "output_tga", param_map);
 
-	/* Rendering
+	/* Rendering */
 	render_monitor = yafaray_createRenderMonitor(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	render_control = yafaray_createRenderControl();
 	yafaray_setRenderControlForNormalStart(render_control);
 	scene_modified_flags = yafaray_checkAndClearSceneModifiedFlags(scene);
 	yafaray_preprocessScene(scene, render_control, scene_modified_flags);
-	yafaray_preprocessSurfaceIntegrator(render_monitor, surface_integrator, render_control, scene);
-	yafaray_render(render_control, render_monitor, surface_integrator, film_1);
+	/* yafaray_preprocessSurfaceIntegrator(render_monitor, surface_integrator, render_control, scene); */
+	/* yafaray_render(render_control, render_monitor, surface_integrator, film_1); */
 	yafaray_setRenderControlForNormalStart(render_control);
-	yafaray_render(render_control, render_monitor, surface_integrator, film_2);
+	/* yafaray_render(render_control, render_monitor, surface_integrator, film_2); */
 	yafaray_destroyRenderControl(render_control);
-	yafaray_destroyRenderMonitor(render_monitor); */
+	yafaray_destroyRenderMonitor(render_monitor);
 
 	container = yafaray_createContainer();
 	yafaray_addSceneToContainer(container, scene);

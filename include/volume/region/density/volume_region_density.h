@@ -30,6 +30,7 @@ class DensityVolumeRegion : public VolumeRegion
 
 	protected:
 		DensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		const struct Params
 		{

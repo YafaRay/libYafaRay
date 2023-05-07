@@ -61,6 +61,8 @@ class Light
 				}};
 		};
 		static std::pair<std::unique_ptr<Light>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Light(Logger &logger, ParamResult &param_result, const ParamMap &param_map, Flags flags, const Items<Light> &lights) : params_{param_result, param_map}, lights_{lights}, flags_{flags}, logger_{logger} { }
 		virtual ~Light() = default;

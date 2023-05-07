@@ -50,8 +50,11 @@ class Image
 		inline static std::string getClassName() { return "Image"; }
 		virtual Type type() const = 0;
 		void setId(size_t id) { id_ = id; }
+		void setName(const std::string &name) { name_ = name; }
+		std::string getName() const { return name_; }
 		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<Image>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		struct Type : public Enum<Type>
 		{
@@ -134,6 +137,7 @@ class Image
 		static Type getTypeFromSettings(bool has_alpha, bool grayscale);
 
 		size_t id_{0};
+		std::string name_;
 };
 
 } //namespace yafaray

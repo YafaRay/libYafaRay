@@ -51,6 +51,7 @@ class MaskMaterial final : public NodeMaterial
 	public:
 		inline static std::string getClassName() { return "MaskMaterial"; }
 		static std::pair<std::unique_ptr<Material>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map, const std::list<ParamMap> &nodes_param_maps);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
 		MaskMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, size_t material_1_id, size_t material_2_id, const Items<Material> &materials);

@@ -41,6 +41,8 @@ class Accelerator
 		inline static std::string getClassName() { return "Accelerator"; }
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Accelerator>, ParamResult> factory(Logger &logger, const RenderControl *render_control, const std::vector<const Primitive *> &primitives_list, const ParamMap &param_map);
+		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 
 		explicit Accelerator(Logger &logger, ParamResult &param_result, const RenderControl *render_control, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}, render_control_{render_control} { }
@@ -164,6 +166,16 @@ inline bool Accelerator::primitiveIntersectionTransparentShadow(IntersectData &i
 		++depth;
 	}
 	return false;
+}
+
+inline std::string Accelerator::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t<accelerator>" << std::endl;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t</accelerator>" << std::endl;
+	return ss.str();
 }
 
 } //namespace yafaray

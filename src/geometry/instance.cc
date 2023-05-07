@@ -87,4 +87,31 @@ bool Instance::updatePrimitives(const Scene &scene)
 	return result;
 }
 
+std::string Instance::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t\t<createInstance />" << std::endl;
+	for(const auto &base_id : base_ids_)
+	{
+		if(base_id.base_id_type_ == BaseId::Type::Object)
+		{
+			ss << "\t\t\t<addInstanceObject base_object_name=\"" << base_id.id_ << "\"/>" << std::endl; //FIXME OBJECT NAME?
+		}
+		else if(base_id.base_id_type_ == BaseId::Type::Instance)
+		{
+			ss << "\t\t\t<addInstanceOfInstance base_instance_id=\"" << base_id.id_ << "\"/>" << std::endl;
+		}
+	}
+	for(const auto &time_step : time_steps_)
+	{
+		ss << "\t\t\t<addInstanceMatrix time=\"" << time_step.time_ << "\">" << std::endl;
+		//FIXMEss << "\t\t\t\t<transform>" << writeMatrix(time_step.obj_to_world_) << "</transform>" << std::endl;
+		ss << "\t\t\t</addInstanceMatrix>" << std::endl;
+	}
+//	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+//	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	//ss << "\t\t\t</TEST_INST>" << std::endl;
+	return ss.str();
+}
+
 } //namespace yafaray

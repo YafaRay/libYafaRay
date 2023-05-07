@@ -108,6 +108,7 @@ std::pair<std::unique_ptr<Image>, ParamResult> Image::factory(Logger &logger, co
 	if(!image) image = Image::factory(params);
 	if(param_result.notOk()) logger.logWarning(param_result.print<Image>(name, {}));
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + image->getAsParamMap(true).print());
+	image->setName(name);
 	return {std::move(image), param_result};
 }
 
@@ -229,6 +230,16 @@ std::string Image::getTypeNameLong(const Type &image_type)
 std::string Image::getTypeNameShort(const Type &image_type)
 {
 	return image_type.print();
+}
+
+std::string Image::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t<image name=\"" << getName() << "\">" << std::endl;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
+	ss << "\t\t</image>" << std::endl;
+	return ss.str();
 }
 
 

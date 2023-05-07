@@ -33,6 +33,7 @@ class PrimitivePolygon final : public FacePrimitive
 
 	public:
 		PrimitivePolygon(const FaceIndices<int> &face_indices, const MeshObject &mesh_object);
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 
 	private:
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time) const override;
@@ -253,6 +254,20 @@ inline ShapePolygon<T, N> PrimitivePolygon<T, N, MotionBlur>::getShapeAtTime(T t
 		}
 	}
 	else return ShapePolygon<T, N>{getVerticesAsArray(0, obj_to_world)};
+}
+
+template<typename T, size_t N, MotionBlurType MotionBlur>
+std::string PrimitivePolygon<T, N, MotionBlur>::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t\t<f";
+	for(size_t i = 0; i < N; ++i)
+	{
+		ss << " " << static_cast<char>('a' + i) << "=\"" << indices_[i].vertex_ << "\"";
+	}
+	ss << "/>" << std::endl;
+	return ss.str();
+	//FIXME PENDING UV INDICES!
 }
 
 } //namespace yafaray

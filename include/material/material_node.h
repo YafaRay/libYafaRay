@@ -38,6 +38,7 @@ class NodeMaterial: public Material
 		explicit NodeMaterial(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Material> &materials) : Material{logger, param_result, param_map, materials} { }
 
 	protected:
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 		/** parse node shaders to fill nodeList */
 		static void parseNodes(Logger &logger, std::vector<const ShaderNode *> &root_nodes_list, std::map<std::string, const ShaderNode *> &root_nodes_map, const std::map<std::string, std::unique_ptr<ShaderNode>> &shaders_table, const ParamMap &param_map);
 		/* put nodes in evaluation order in "allSorted" given all root nodes;

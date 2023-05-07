@@ -20,6 +20,8 @@
 #include "volume/handler/volume_handler_sss.h"
 #include "common/logger.h"
 #include "param/param.h"
+#include "volume/handler/volume_handler.h"
+
 
 namespace yafaray {
 
@@ -55,6 +57,16 @@ VolumeHandler::VolumeHandler(Logger &logger, ParamResult &param_result, const Pa
 		params_{param_result, param_map}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
+}
+
+std::string VolumeHandler::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << "\t\t<volume_handler>" << std::endl;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t</volume_handler>" << std::endl;
+	return ss.str();
 }
 
 } //namespace yafaray

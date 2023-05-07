@@ -39,6 +39,7 @@ class PrimitiveInstance final : public Primitive
 {
 	public:
 		PrimitiveInstance(const Primitive &base_primitive, const Instance &base_instance) : base_instance_(base_instance), base_primitive_(base_primitive) { }
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 		Bound<float> getBound() const override;
 		Bound<float> getBound(const Matrix4f &obj_to_world) const override;
 		bool clippingSupport() const override { return base_primitive_.clippingSupport() && !hasMotionBlur(); }
@@ -139,6 +140,18 @@ inline Bound<float> PrimitiveInstance::getBound(const Matrix4f &obj_to_world) co
 		result.include(base_primitive_.getBound(obj_to_world * *(matrices[i])));
 	}
 	return result;
+}
+
+inline std::string PrimitiveInstance::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	//FIXME!!!!
+	std::stringstream ss;
+	ss << "\t\t\t<createInstance>" << std::endl;
+//	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+//	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << "\t\t\t</createInstance>" << std::endl;
+	//FIXMEfor( )
+	return ss.str();
 }
 
 } //namespace yafaray

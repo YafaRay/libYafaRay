@@ -37,6 +37,8 @@ class VolumeRegion
 		inline static std::string getClassName() { return "VolumeRegion"; }
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<VolumeRegion>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		VolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~VolumeRegion() = default;

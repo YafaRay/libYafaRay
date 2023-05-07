@@ -152,7 +152,7 @@ class ParamMap : public Collection<std::string, Parameter>
 			setParam(param_meta.name(), val);
 		}
 		std::string print() const;
-		std::string exportMap(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map, const std::vector<std::string> &excluded_params_meta) const;
+		std::string exportMap(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map, const std::vector<std::string> &excluded_params_meta) const;
 		std::string logContents() const;
 		void setInputColorSpace(const std::string &color_space_string, float gamma_val);
 
