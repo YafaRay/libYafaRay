@@ -31,6 +31,7 @@ class PathIntegrator final : public CausticPhotonIntegrator
 	public:
 		inline static std::string getClassName() { return "PathIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &params);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		PathIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;

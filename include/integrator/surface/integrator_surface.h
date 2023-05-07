@@ -64,6 +64,7 @@ class SurfaceIntegrator
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		virtual ~SurfaceIntegrator();
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
 		[[nodiscard]] static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		/*! do whatever is required to render the image, if suitable for integrating whole image */

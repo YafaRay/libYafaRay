@@ -312,7 +312,7 @@ void writeMatrix(const std::string &matrix_name, const Matrix4f &m, std::strings
 	}
 }
 
-std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map) const
+std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map, const std::vector<std::string> &excluded_params_meta) const
 {
 	std::stringstream ss;
 	for(const auto &[param_name, param] : items_)
@@ -460,20 +460,48 @@ std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_typ
 				writeMatrix(param_name, m, ss, container_export_type);
 			}
 		}
-		const auto param_meta{findPointerInMap(param_meta_map, param_name)};
-		if(param_meta)
+		bool skip_param_meta = false;
+		for(const auto &excluded_param_meta: excluded_params_meta)
 		{
-			if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+			if(param_name == excluded_param_meta)
 			{
-				ss << " /* " << param_meta->desc() << " */";
+				skip_param_meta = true;
+				break;
 			}
-			else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+		}
+		if(!skip_param_meta)
+		{
+			const auto param_meta{findPointerInMap(param_meta_map, param_name)};
+			if(param_meta)
 			{
-				ss << " #" << param_meta->desc();
+				if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+				{
+					ss << " /* " << param_meta->desc() << " */";
+				}
+				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+				{
+					ss << " #" << param_meta->desc();
+				}
+				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+				{
+					ss << " <!-- " << param_meta->desc() << " -->";
+				}
 			}
-			else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+			else
 			{
-				ss << " <!-- " << param_meta->desc() << " -->";
+				constexpr std::string_view error_unknown{"This parameter is *unknown* and probably not currently used by libYafaRay"};
+				if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+				{
+					ss << " /* " << error_unknown << " */";
+				}
+				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+				{
+					ss << " #" << error_unknown;
+				}
+				else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+				{
+					ss << " <!-- " << error_unknown << " -->";
+				}
 			}
 		}
 		ss << std::endl;

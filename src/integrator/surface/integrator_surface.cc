@@ -246,7 +246,7 @@ std::string SurfaceIntegrator::exportToString(yafaray_ContainerExportType contai
 	std::stringstream ss;
 	ss << getClassName() << " '" << getName() << "'" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(container_export_type, only_export_non_default_parameters, params_.getParamMetaMap());
+	ss << param_map.exportMap(container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
 	return ss.str();
 }
 

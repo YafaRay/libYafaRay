@@ -40,6 +40,7 @@ class BidirectionalIntegrator final : public TiledIntegrator
 	public:
 		inline static std::string getClassName() { return "BidirectionalIntegrator"; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		BidirectionalIntegrator(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
