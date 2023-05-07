@@ -109,8 +109,8 @@ yafaray_Film *yafaray_getFilmFromContainerByName(const yafaray_Container *contai
 	return reinterpret_cast<yafaray_Film *>(reinterpret_cast<const yafaray::Container *>(container)->getImageFilm(name));
 }
 
-char *yafaray_exportContainerToString(const yafaray_Container *container, yafaray_ContainerExportType container_export_type, yafaray_Bool export_default_param_values)
+char *yafaray_exportContainerToString(const yafaray_Container *container, yafaray_ContainerExportType container_export_type, yafaray_Bool only_export_non_default_parameters)
 {
 	if(!container) return NULL;
-	return createCharString(reinterpret_cast<const yafaray::Container *>(container)->exportToString(container_export_type, static_cast<bool>(export_default_param_values)));
+	return createCharString(reinterpret_cast<const yafaray::Container *>(container)->exportToString(container_export_type, static_cast<bool>(only_export_non_default_parameters)));
 }

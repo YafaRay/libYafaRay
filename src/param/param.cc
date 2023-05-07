@@ -293,4 +293,192 @@ bool ParamMap::operator!=(const ParamMap &param_map) const
 	);
 }
 
+void writeMatrix(const std::string &matrix_name, const Matrix4f &m, std::stringstream &ss, yafaray_ContainerExportType container_export_type) noexcept
+{
+	if(container_export_type == YAFARAY_CONTAINER_EXPORT_C || container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+	{
+		ss <<
+		   m[0][0] << ", " << m[0][1] << ", " << m[0][2] << ", " << m[0][3] << ", " <<
+		   m[1][0] << ", " << m[1][1] << ", " << m[1][2] << ", " << m[1][3] << ", " <<
+		   m[2][0] << ", " << m[2][1] << ", " << m[2][2] << ", " << m[2][3] << ", " <<
+		   m[3][0] << ", " << m[3][1] << ", " << m[3][2] << ", " << m[3][3];
+	}
+	else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+	{
+		ss << "<" << matrix_name << " m00=\"" << m[0][0] << "\" m01=\"" << m[0][1] << "\" m02=\"" << m[0][2] << "\" m03=\"" << m[0][3] << "\""
+			 << " m10=\"" << m[1][0] << "\" m11=\"" << m[1][1] << "\" m12=\"" << m[1][2] << "\" m13=\"" << m[1][3] << "\""
+			 << " m20=\"" << m[2][0] << "\" m21=\"" << m[2][1] << "\" m22=\"" << m[2][2] << "\" m23=\"" << m[2][3] << "\""
+			 << " m30=\"" << m[3][0] << "\" m31=\"" << m[3][1] << "\" m32=\"" << m[3][2] << "\" m33=\"" << m[3][3] << "\"/>";
+	}
+}
+
+std::string ParamMap::exportMap(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::map<std::string, const ParamMeta *> &param_meta_map) const
+{
+	std::stringstream ss;
+	for(const auto &[param_name, param] : items_)
+	{
+		const Parameter::Type type = param.type();
+		if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+		{
+			if(type == Parameter::Type::Int)
+			{
+				int i = 0;
+				param.getVal(i);
+				ss << "yafaray_setParamMapInt(yi, \"" << param_name << "\", " << i << ");";
+			}
+			else if(type == Parameter::Type::Bool)
+			{
+				bool b = false;
+				param.getVal(b);
+				ss << "yafaray_setParamMapBool(yi, \"" << param_name << "\", " << (b ? "true" : "false") << ");";
+			}
+			else if(type == Parameter::Type::Float)
+			{
+				double f = 0.0;
+				param.getVal(f);
+				ss << "yafaray_setParamMapFloat(yi, \"" << param_name << "\", " << f << ");";
+			}
+			else if(type == Parameter::Type::String)
+			{
+				std::string s;
+				param.getVal(s);
+				ss << "yafaray_setParamMapString(yi, \"" << param_name << "\", \"" << s << "\");";
+			}
+			else if(type == Parameter::Type::Vector)
+			{
+				Point3f p{{0.f, 0.f, 0.f}};
+				param.getVal(p);
+				ss << "yafaray_setParamMapVector(yi, \"" << param_name << "\", " << p[Axis::X] << ", " << p[Axis::Y] << ", " << p[Axis::Z] << ");";
+			}
+			else if(type == Parameter::Type::Color)
+			{
+				Rgba c(0.f);
+				param.getVal(c);
+				c.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);    //Color values are encoded to the desired color space before saving them to the XML file
+				ss << "yafaray_setParamMapColor(yi, \"" << param_name << "\", " << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << ");";
+			}
+			else if(type == Parameter::Type::Matrix)
+			{
+				Matrix4f m;
+				param.getVal(m);
+				ss << "yafaray_setParamMapMatrix(yi, ";
+				writeMatrix(param_name, m, ss, container_export_type);
+				ss << ", false);";
+			}
+		}
+		else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+		{
+			if(type == Parameter::Type::Int)
+			{
+				int i = 0;
+				param.getVal(i);
+				ss << "yafaray_setParamMapInt(yi, \"" << param_name << "\", " << i << ");";
+			}
+			else if(type == Parameter::Type::Bool)
+			{
+				bool b = false;
+				param.getVal(b);
+				ss << "yafaray_setParamMapBool(yi, \"" << param_name << "\", " << (b ? "true" : "false") << ");";
+			}
+			else if(type == Parameter::Type::Float)
+			{
+				double f = 0.0;
+				param.getVal(f);
+				ss << "yafaray_setParamMapFloat(yi, \"" << param_name << "\", " << f << ");";
+			}
+			else if(type == Parameter::Type::String)
+			{
+				std::string s;
+				param.getVal(s);
+				ss << "yafaray_setParamMapString(yi, \"" << param_name << "\", \"" << s << "\");";
+			}
+			else if(type == Parameter::Type::Vector)
+			{
+				Point3f p{{0.f, 0.f, 0.f}};
+				param.getVal(p);
+				ss << "yafaray_setParamMapVector(yi, \"" << param_name << "\", " << p[Axis::X] << ", " << p[Axis::Y] << ", " << p[Axis::Z] << ");";
+			}
+			else if(type == Parameter::Type::Color)
+			{
+				Rgba c(0.f);
+				param.getVal(c);
+				c.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);    //Color values are encoded to the desired color space before saving them to the XML file
+				ss << "yafaray_setParamMapColor(yi, \"" << param_name << "\", " << c.r_ << ", " << c.g_ << ", " << c.b_ << ", " << c.a_ << ");";
+			}
+			else if(type == Parameter::Type::Matrix)
+			{
+				Matrix4f m;
+				param.getVal(m);
+				ss << "yafaray_setParamMapMatrix(yi, ";
+				writeMatrix(param_name, m, ss, container_export_type);
+				ss << ", false);";
+			}
+		}
+		else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+		{
+			if(type == Parameter::Type::Int)
+			{
+				int i = 0;
+				param.getVal(i);
+				ss << "<" << param_name << " ival=\"" << i << "\"/>";
+			}
+			else if(type == Parameter::Type::Bool)
+			{
+				bool b = false;
+				param.getVal(b);
+				ss << "<" << param_name << " bval=\"" << b << "\"/>";
+			}
+			else if(type == Parameter::Type::Float)
+			{
+				double f = 0.0;
+				param.getVal(f);
+				ss << "<" << param_name << " fval=\"" << f << "\"/>";
+			}
+			else if(type == Parameter::Type::String)
+			{
+				std::string s;
+				param.getVal(s);
+				ss << "<" << param_name << " sval=\"" << s << "\"/>";
+			}
+			else if(type == Parameter::Type::Vector)
+			{
+				Point3f p{{0.f, 0.f, 0.f}};
+				param.getVal(p);
+				ss << "<" << param_name << " x=\"" << p[Axis::X] << "\" y=\"" << p[Axis::Y] << "\" z=\"" << p[Axis::Z] << "\"/>";
+			}
+			else if(type == Parameter::Type::Color)
+			{
+				Rgba c(0.f);
+				param.getVal(c);
+				c.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);    //Color values are encoded to the desired color space before saving them to the XML file
+				ss << "<" << param_name << " r=\"" << c.r_ << "\" g=\"" << c.g_ << "\" b=\"" << c.b_ << "\" a=\"" << c.a_ << "\"/>";
+			}
+			else if(type == Parameter::Type::Matrix)
+			{
+				Matrix4f m;
+				param.getVal(m);
+				writeMatrix(param_name, m, ss, container_export_type);
+			}
+		}
+		const auto param_meta{findPointerInMap(param_meta_map, param_name)};
+		if(param_meta)
+		{
+			if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
+			{
+				ss << " /* " << param_meta->desc() << " */";
+			}
+			else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
+			{
+				ss << " #" << param_meta->desc();
+			}
+			else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
+			{
+				ss << " <!-- " << param_meta->desc() << " -->";
+			}
+		}
+		ss << std::endl;
+	}
+	return ss.str();
+}
+
 } //namespace yafaray

@@ -66,7 +66,9 @@ class ImageFilm final
 		ImageFilm(Logger &logger, ParamResult &param_result, const std::string &name, const ParamMap &param_map);
 		~ImageFilm();
 		std::string getName() const { return name_; }
+		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...
@@ -236,7 +238,6 @@ class ImageFilm final
 			PARAM_DECL(float , layer_faces_edge_threshold_, 0.01f, "layer_faces_edge_threshold", "Threshold for the edge detection process used in the Faces Edge Render Layers");
 			PARAM_DECL(float , layer_faces_edge_smoothness_, 0.5f, "layer_faces_edge_smoothness", "Smoothness (blur) of the edges used in the Faces Edge Render Layers");
 		} params_;
-		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 
 		std::string getFilmPath() const;
 		bool imageFilmLoad(const std::string &filename);

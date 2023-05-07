@@ -62,8 +62,10 @@ class SurfaceIntegrator
 		[[nodiscard]] virtual Type type() const = 0;
 		[[nodiscard]] std::string getName() const { return name_; }
 		static std::pair<std::unique_ptr<SurfaceIntegrator>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
-		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~SurfaceIntegrator();
+		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
+		[[nodiscard]] static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		/*! do whatever is required to render the image, if suitable for integrating whole image */
 		bool render(RenderControl &render_control, RenderMonitor &render_monitor, ImageFilm *image_film);
 		virtual std::pair<Rgb, float> integrate(Ray &ray, RandomGenerator &random_generator, std::vector<int> &correlative_sample_number, ColorLayers *color_layers, int ray_level, bool chromatic_enabled, float wavelength, int additional_depth, const RayDivision &ray_division, const PixelSamplingData &pixel_sampling_data) = 0; 	//!< chromatic_enabled indicates wether the full spectrum is calculated (true) or only a single wavelength (false). wavelength is the (normalized) wavelength being used when chromatic is false. The range is defined going from 400nm (0.0) to 700nm (1.0), although the widest range humans can perceive is ofteb given 380-780nm.

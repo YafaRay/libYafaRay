@@ -35,6 +35,7 @@ class ImageFilm;
 class Container final
 {
 	public:
+		void destroyContainedPointers();
 		void addScene(Scene *scene) { scenes_.emplace_back(scene); }
 		void addSurfaceIntegrator(SurfaceIntegrator *surface_integrator) { surface_integrators_.emplace_back(surface_integrator); }
 		void addImageFilm(ImageFilm *image_film) { image_films_.emplace_back(image_film); }
@@ -47,8 +48,9 @@ class Container final
 		SurfaceIntegrator *getSurfaceIntegrator(const std::string &name) const;
 		ImageFilm *getImageFilm(size_t index) const { if(index < scenes_.size()) return image_films_[index]; else return nullptr; }
 		ImageFilm *getImageFilm(const std::string &name) const;
-		std::string exportToString(yafaray_ContainerExportType container_export_type, bool export_default_param_values) const;
-		void destroyContainedPointers();
+		std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		std::string createExportStartSection(yafaray_ContainerExportType container_export_type) const;
+		std::string createExportEndSection(yafaray_ContainerExportType container_export_type) const;
 
 	private:
 		std::vector<Scene *> scenes_;

@@ -442,4 +442,11 @@ void Scene::setAcceleratorParamMap(const ParamMap &param_map)
 	}
 }
 
+std::string Scene::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << getClassName() << " '" << getName() << "'" << std::endl;
+	return ss.str();
+}
+
 } //namespace yafaray

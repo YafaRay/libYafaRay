@@ -181,7 +181,7 @@ YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_getSurfaceIntegratorFrom
 YAFARAY_C_API_EXPORT yafaray_SurfaceIntegrator *yafaray_getSurfaceIntegratorFromContainerByName(const yafaray_Container *container, const char *name);
 YAFARAY_C_API_EXPORT yafaray_Film *yafaray_getFilmFromContainerByIndex(const yafaray_Container *container, size_t index);
 YAFARAY_C_API_EXPORT yafaray_Film *yafaray_getFilmFromContainerByName(const yafaray_Container *container, const char *name);
-YAFARAY_C_API_EXPORT char *yafaray_exportContainerToString(const yafaray_Container *container, yafaray_ContainerExportType container_export_type, yafaray_Bool export_default_param_values);
+YAFARAY_C_API_EXPORT char *yafaray_exportContainerToString(const yafaray_Container *container, yafaray_ContainerExportType container_export_type, yafaray_Bool only_export_non_default_parameters);
 
 /* Scene functions */
 YAFARAY_C_API_EXPORT yafaray_Scene *yafaray_createScene(yafaray_Logger *logger, const char *name);

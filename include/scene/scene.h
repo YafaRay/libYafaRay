@@ -70,6 +70,7 @@ class Scene final
 		Scene(Logger &logger, const std::string &name);
 		~Scene();
 		std::string getName() const { return name_; }
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		void setAcceleratorParamMap(const ParamMap &param_map);
 		int addVertex(size_t object_id, Point3f &&p, unsigned char time_step);
 		int addVertex(size_t object_id, Point3f &&p, Point3f &&orco, unsigned char time_step);
