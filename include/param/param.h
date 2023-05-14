@@ -116,8 +116,11 @@ class ParamMap : public Collection<std::string, Parameter>
 			{
 				Rgba col;
 				const auto result{getParam(param_meta.name(), col)};
-				col.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);
-				val = static_cast<T>(col);
+				if(result.isOk())
+				{
+					col.colorSpaceFromLinearRgb(input_color_space_, input_gamma_);
+					val = static_cast<T>(col);
+				}
 				return result;
 			}
 			else return getParam(param_meta.name(), val);
@@ -127,7 +130,10 @@ class ParamMap : public Collection<std::string, Parameter>
 		{
 			std::string val_str;
 			const ResultFlags result{getParam(name, val_str)};
-			val.initFromString(val_str);
+			if(result.isOk())
+			{
+				val.initFromString(val_str);
+			}
 			return result;
 		}
 		template <typename T>
