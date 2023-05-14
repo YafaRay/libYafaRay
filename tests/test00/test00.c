@@ -186,7 +186,6 @@ int main(void)
 	/* Shader tree definition */
 	yafaray_clearParamMap(param_map);
 	yafaray_clearParamMapList(param_map_list);
-	yafaray_setParamMapString(param_map, "element", "shader_node");
 	yafaray_setParamMapString(param_map, "name", "diff_layer0");
 	yafaray_setParamMapString(param_map, "input", "map0");
 	yafaray_setParamMapString(param_map, "type", "layer");
@@ -194,7 +193,6 @@ int main(void)
 	yafaray_setParamMapColor(param_map, "upper_color", 1.f, 1.f, 1.f, 1.f);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "element", "shader_node");
 	yafaray_setParamMapString(param_map, "name", "map0");
 	yafaray_setParamMapString(param_map, "type", "texture_mapper");
 	yafaray_setParamMapString(param_map, "mapping", "cube");

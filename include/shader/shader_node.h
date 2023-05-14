@@ -100,7 +100,6 @@ class ShaderNode
 			Params(ParamResult &param_result, const ParamMap &param_map);
 			static std::map<std::string, const ParamMeta *> getParamMetaMap();
 			PARAM_DECL(std::string, name_, "", "name", "Name of the shader node");
-			PARAM_DECL(std::string, element_, "shader_node", "element", "The element parameter in shader nodes must be set to 'shader node'");
 		} params_;
 
 	private:

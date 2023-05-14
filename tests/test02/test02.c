@@ -125,7 +125,6 @@ int main()
 	yafaray_setParamMapFloat(param_map, "def_val", 1);
 	yafaray_setParamMapBool(param_map, "do_color", YAFARAY_BOOL_TRUE);
 	yafaray_setParamMapBool(param_map, "do_scalar", YAFARAY_BOOL_FALSE);
-	yafaray_setParamMapString(param_map, "element", "shader_node");
 	yafaray_setParamMapString(param_map, "input", "map0");
 	yafaray_setParamMapString(param_map, "name", "filter_color_layer0");
 	yafaray_setParamMapBool(param_map, "negative", YAFARAY_BOOL_FALSE);
@@ -137,7 +136,6 @@ int main()
 	yafaray_setParamMapBool(param_map, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-	yafaray_setParamMapString(param_map, "element", "shader_node");
 	yafaray_setParamMapString(param_map, "mapping", "cube");
 	yafaray_setParamMapString(param_map, "name", "map0");
 	yafaray_setParamMapVector(param_map, "offset", 0, 0, 0);

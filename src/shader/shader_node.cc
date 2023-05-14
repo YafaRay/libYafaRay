@@ -30,21 +30,18 @@ std::map<std::string, const ParamMeta *> ShaderNode::Params::getParamMetaMap()
 {
 	std::map<std::string, const ParamMeta *> param_meta_map;
 	PARAM_META(name_);
-	PARAM_META(element_);
 	return param_meta_map;
 }
 
 ShaderNode::Params::Params(ParamResult &param_result, const ParamMap &param_map)
 {
 	PARAM_LOAD(name_);
-	PARAM_LOAD(element_);
 }
 
 ParamMap ShaderNode::getAsParamMap(bool only_non_default) const
 {
 	ParamMap param_map;
 	PARAM_SAVE(name_);
-	PARAM_SAVE(element_);
 	return param_map;
 }
 
@@ -70,10 +67,10 @@ ShaderNode::ShaderNode(Logger &logger, ParamResult &param_result, const ParamMap
 std::string ShaderNode::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t\t<list_element>" << std::endl;
+	ss << "\t\t\t<shader_node>" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
 	ss << param_map.exportMap(4, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t\t</list_element>" << std::endl;
+	ss << "\t\t\t</shader_node>" << std::endl;
 	return ss.str();
 }
 

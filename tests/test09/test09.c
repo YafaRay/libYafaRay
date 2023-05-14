@@ -118,14 +118,12 @@ int main()
 
 	yafaray_clearParamMapList(param_map_list);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");
@@ -142,14 +140,12 @@ int main()
 
 	yafaray_clearParamMap(param_map);
 	yafaray_clearParamMapList(param_map_list);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");
@@ -166,14 +162,12 @@ int main()
 
 	yafaray_clearParamMap(param_map);
 	yafaray_clearParamMapList(param_map_list);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");
@@ -190,14 +184,12 @@ int main()
 
 	yafaray_clearParamMapList(param_map_list);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");
@@ -215,14 +207,12 @@ int main()
 	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "blend_mode", "mix");
 		yafaray_setParamMapFloat(param_map, "colfac", 0.95);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");
@@ -240,14 +230,12 @@ int main()
 	yafaray_clearParamMap(param_map);
 		yafaray_setParamMapString(param_map, "blend_mode", "mix");
 		yafaray_setParamMapFloat(param_map, "colfac", 0.95);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "input", "map0");
 		yafaray_setParamMapString(param_map, "name", "diff_layer0");
 		yafaray_setParamMapString(param_map, "type", "layer");
 		yafaray_setParamMapColor(param_map, "upper_color", 0.8, 0.8, 0.8, 1);
 	yafaray_addParamMapToList(param_map_list, param_map);
 	yafaray_clearParamMap(param_map);
-		yafaray_setParamMapString(param_map, "element", "shader_node");
 		yafaray_setParamMapString(param_map, "mapping", "cube");
 		yafaray_setParamMapString(param_map, "name", "map0");
 		yafaray_setParamMapString(param_map, "texco", "orco");

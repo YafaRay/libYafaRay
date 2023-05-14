@@ -106,13 +106,6 @@ std::map<std::string, std::unique_ptr<ShaderNode>> NodeMaterial::loadNodes(const
 
 	for(const auto &param_map : params_list)
 	{
-		std::string element;
-		if(param_map.getParam("element", element).isOk())
-		{
-			if(element != "shader_node") continue;
-		}
-		else logger.logWarning("NodeMaterial: No element type given; assuming shader node");
-
 		std::string name;
 		if(param_map.getParam("name", name).notOk())
 		{

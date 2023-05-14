@@ -73,14 +73,12 @@ int main()
 	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
 	/* Shader tree definition */
 	yafaray_addParamMapToList(param_map_list, param_map);
-	yafaray_setParamMapString(yi, "element", "shader_node");
 	yafaray_setParamMapString(yi, "name", "diff_layer0");
 	yafaray_setParamMapString(yi, "input", "map0");
 	yafaray_setParamMapString(yi, "type", "layer");
 	yafaray_setParamMapString(yi, "blend_mode", "mix");
 	yafaray_setParamMapColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
 	yafaray_addParamMapToList(param_map_list, param_map);
-	yafaray_setParamMapString(yi, "element", "shader_node");
 	yafaray_setParamMapString(yi, "name", "map0");
 	yafaray_setParamMapString(yi, "type", "texture_mapper");
 	yafaray_setParamMapString(yi, "mapping", "cube");
@@ -183,14 +181,12 @@ int main()
 	yafaray_setParamMapColor(yi, "color", 1.f, 1.f, 1.f, 1.f);
 	/* Shader tree definition */
 	yafaray_addParamMapToList(param_map_list, param_map);
-	yafaray_setParamMapString(yi, "element", "shader_node");
 	yafaray_setParamMapString(yi, "name", "diff_layer0");
 	yafaray_setParamMapString(yi, "input", "map0");
 	yafaray_setParamMapString(yi, "type", "layer");
 	yafaray_setParamMapString(yi, "blend_mode", "mix");
 	yafaray_setParamMapColor(yi, "upper_color", 1.f,1.f,1.f,1.f);
 	yafaray_addParamMapToList(param_map_list, param_map);
-	yafaray_setParamMapString(yi, "element", "shader_node");
 	yafaray_setParamMapString(yi, "name", "map0");
 	yafaray_setParamMapString(yi, "type", "texture_mapper");
 	yafaray_setParamMapString(yi, "mapping", "cube");

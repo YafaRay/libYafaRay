@@ -136,7 +136,6 @@ int main()
 	yafaray_setParamMapFloat(yi, "wireframe_exponent", 0);
 	yafaray_setParamMapFloat(yi, "wireframe_thickness", 0.01);
 	yafaray_addParamMapToList(param_map_list, param_map);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "mapping", "cube");
 		yafaray_setParamMapString(yi, "name", "node_tga");
 		yafaray_setParamMapVector(yi, "offset", 0, 0, 0);
@@ -148,7 +147,6 @@ int main()
 		yafaray_setParamMapString(yi, "texture", "Texture_TGA");
 		yafaray_setParamMapString(yi, "type", "texture_mapper");
 	yafaray_addParamMapToList(param_map_list, param_map);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "mapping", "cube");
 		yafaray_setParamMapString(yi, "name", "node_hdr");
 		yafaray_setParamMapVector(yi, "offset", 0, 0, 0);
@@ -160,7 +158,6 @@ int main()
 		yafaray_setParamMapString(yi, "texture", "Texture_HDR");
 		yafaray_setParamMapString(yi, "type", "texture_mapper");
 	yafaray_addParamMapToList(param_map_list, param_map);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "name", "node_mix");
 		yafaray_setParamMapString(yi, "input1", "node_tga");
 		yafaray_setParamMapString(yi, "input2", "node_hdr");
@@ -175,7 +172,6 @@ int main()
 		yafaray_setParamMapFloat(yi, "def_val", 1);
 		yafaray_setParamMapBool(yi, "do_color", YAFARAY_BOOL_TRUE);
 		yafaray_setParamMapBool(yi, "do_scalar", YAFARAY_BOOL_FALSE);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "input", "node_mix");
 		yafaray_setParamMapString(yi, "name", "diff_layer0");
 		yafaray_setParamMapBool(yi, "negative", YAFARAY_BOOL_FALSE);

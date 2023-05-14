@@ -143,7 +143,6 @@ int main()
 		yafaray_setParamMapFloat(yi, "def_val", 1);
 		yafaray_setParamMapBool(yi, "do_color", YAFARAY_BOOL_TRUE);
 		yafaray_setParamMapBool(yi, "do_scalar", YAFARAY_BOOL_FALSE);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "input", "map0");
 		yafaray_setParamMapString(yi, "name", "diff_layer0");
 		yafaray_setParamMapBool(yi, "negative", YAFARAY_BOOL_FALSE);
@@ -154,7 +153,6 @@ int main()
 		yafaray_setParamMapFloat(yi, "upper_value", 0);
 		yafaray_setParamMapBool(yi, "use_alpha", YAFARAY_BOOL_FALSE);
 	yafaray_addParamMapToList(param_map_list, param_map);
-		yafaray_setParamMapString(yi, "element", "shader_node");
 		yafaray_setParamMapString(yi, "mapping", "cube");
 		yafaray_setParamMapString(yi, "name", "map0");
 		yafaray_setParamMapVector(yi, "offset", 0, 0, 0);
