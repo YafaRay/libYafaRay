@@ -37,6 +37,7 @@ int main()
 	yafaray_SceneModifiedFlags scene_modified_flags = YAFARAY_SCENE_MODIFIED_NOTHING;
 	size_t material_id = 0;
 	size_t object_id = 0;
+	size_t instance_id = 0;
 	size_t image_id = 0;
 	yafaray_Container *container = NULL;
 	char *exported_string = NULL;
@@ -442,6 +443,13 @@ int main()
 	yafaray_addTriangle(scene, object_id, 0, 1, 3, material_id);
 	yafaray_addTriangle(scene, object_id, 0, 3, 2, material_id);
 	yafaray_initObject(scene, object_id, material_id);
+
+	instance_id = yafaray_createInstance(scene);
+	yafaray_addInstanceObject(scene, instance_id, 0);
+	yafaray_addInstanceObject(scene, instance_id, 1);
+	yafaray_addInstanceMatrix(scene, instance_id, 1.f, 2.f, 3.f, 4.f, 1.5f, 2.5f, 3.5f, 4.5f, 1.7f, 2.7f, 3.7f, 4.7f, 1.95f, 2.95f, 3.95f, 4.95f, 0.f);
+	yafaray_addInstanceMatrix(scene, instance_id, 11.f, 2.f, 3.f, 4.f, 1.5f, 2.5f, 3.5f, 4.5f, 1.7f, 2.7f, 3.7f, 4.7f, 1.95f, 2.95f, 3.95f, 4.95f, 0.5f);
+	yafaray_addInstanceMatrix(scene, instance_id, 21.f, 2.f, 3.f, 4.f, 1.5f, 2.5f, 3.5f, 4.5f, 1.7f, 2.7f, 3.7f, 4.7f, 1.95f, 2.95f, 3.95f, 4.95f, 1.f);
 
 	/* Setting up scene background */
 	yafaray_clearParamMap(param_map);

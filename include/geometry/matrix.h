@@ -20,9 +20,10 @@
  *      Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
-#ifndef YAFARAY_MATRIX4_H
-#define YAFARAY_MATRIX4_H
+#ifndef LIBYAFARAY_MATRIX_H
+#define LIBYAFARAY_MATRIX_H
 
+#include "public_api/yafaray_c_api.h"
 #include "geometry/vector.h"
 #include <iostream>
 
@@ -51,15 +52,16 @@ class SquareMatrix
 		SquareMatrix<T, N> &transpose();
 		void identity();
 		void translate(const Vec<T, N - 1> &vec);
-		void rotateX(T degrees);
-		void rotateY(T degrees);
-		void rotateZ(T degrees);
+//		void rotateX(T degrees);
+//		void rotateY(T degrees);
+//		void rotateZ(T degrees);
 		void scale(const Vec<T, N - 1> &vec);
 		bool invalid() const { return invalid_; }
 		const std::array<T, N> &operator [](size_t i) const { return matrix_[i]; }
 		std::array<T, N> &operator [](size_t i) { return matrix_[i]; }
 		void setVal(size_t row, size_t col, T val) { matrix_[row][col] = val; };
 		T getVal(size_t row, size_t col) { return matrix_[row][col]; }
+		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type) const;
 
 	private:
 		template<typename MatrixType> static void swapRows(MatrixType& matrix, size_t row_a, size_t row_b);
@@ -357,6 +359,25 @@ inline std::ostream &operator << (std::ostream &out, const SquareMatrix<T, N> &m
 		else out << " |\n";
 	}
 	return out;
+}
+
+template<typename T, size_t N>
+inline std::string SquareMatrix<T, N>::exportToString(yafaray_ContainerExportType container_export_type) const
+{
+	std::stringstream ss;
+	for(size_t i = 0; i < N; ++i)
+	{
+		for(size_t j = 0; j < N; ++j)
+		{
+			if(i > 0 || j > 0)
+			{
+				if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML) ss << " ";
+				else ss << ", ";
+			}
+			ss << "m" << static_cast<char>('0' + i) << static_cast<char>('0' + j) << "=\"" << matrix_[i][j] << "\"";
+		}
+	}
+	return ss.str();
 }
 
 } //namespace yafaray

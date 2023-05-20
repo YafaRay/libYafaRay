@@ -455,7 +455,7 @@ std::string Scene::exportToString(size_t indent_level, yafaray_ContainerExportTy
 	if(background_) ss << background_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	for(const auto &[item, item_name, item_enabled] : lights_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	for(const auto &[item, item_name, item_enabled] : objects_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
-	for(const auto &item : instances_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &item : instances_) ss << item->exportToString(indent_level + 1, container_export_type, *this);
 	for(const auto &[item, item_name, item_enabled] : volume_regions_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</scene>" << std::endl;
 	return ss.str();

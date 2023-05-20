@@ -37,7 +37,7 @@ class Instance final
 
 	public:
 		inline static std::string getClassName() { return "Instance"; }
-		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, const Scene &scene) const;
 		void addObject(size_t object_id);
 		void addInstance(size_t instance_id);
 		void addObjToWorldMatrix(Matrix4f &&obj_to_world, float time);

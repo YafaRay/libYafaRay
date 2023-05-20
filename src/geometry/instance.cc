@@ -87,30 +87,29 @@ bool Instance::updatePrimitives(const Scene &scene)
 	return result;
 }
 
-std::string Instance::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string Instance::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, const Scene &scene) const
 {
+	const auto &objects{scene.getObjects()};
 	std::stringstream ss;
-	ss << std::string(indent_level, '\t') << "<createInstance />" << std::endl;
+	ss << std::string(indent_level, '\t') << "<instance>" << std::endl;
 	for(const auto &base_id : base_ids_)
 	{
 		if(base_id.base_id_type_ == BaseId::Type::Object)
 		{
-			ss << std::string(indent_level + 1, '\t') << "<addInstanceObject base_object_name=\"" << base_id.id_ << "\"/>" << std::endl; //FIXME OBJECT NAME?
+			ss << std::string(indent_level + 1, '\t') << "<object name=\"" << objects.findNameFromId(base_id.id_).first << "\"/>" << std::endl;
 		}
 		else if(base_id.base_id_type_ == BaseId::Type::Instance)
 		{
-			ss << std::string(indent_level + 1, '\t') << "<addInstanceOfInstance base_instance_id=\"" << base_id.id_ << "\"/>" << std::endl;
+			ss << std::string(indent_level + 1, '\t') << "<instance id=\"" << base_id.id_ << "\"/>" << std::endl;
 		}
 	}
 	for(const auto &time_step : time_steps_)
 	{
-		ss << std::string(indent_level + 1, '\t') << "<addInstanceMatrix time=\"" << time_step.time_ << "\">" << std::endl;
-		//FIXMEss << std::string(indent_level + 1, '\t') << "<transform>" << writeMatrix(time_step.obj_to_world_) << "</transform>" << std::endl;
-		ss << std::string(indent_level + 1, '\t') << "</addInstanceMatrix>" << std::endl;
+		ss << std::string(indent_level + 1, '\t') << "<matrix time=\"" << time_step.time_ << "\" ";
+		ss << time_step.obj_to_world_.exportToString(container_export_type);
+		ss << "/>" << std::endl;
 	}
-//	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-//	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	//ss << std::string(indent_level, '\t') << "</TEST_INST>" << std::endl;
+	ss << std::string(indent_level, '\t') << "</instance>" << std::endl;
 	return ss.str();
 }
 
