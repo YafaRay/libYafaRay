@@ -32,7 +32,7 @@ class PrimitiveObject final : public Object
 
 	public:
 		PrimitiveObject(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		void setPrimitive(std::unique_ptr<const Primitive> primitive) { primitive_ = std::move(primitive); }

@@ -51,7 +51,7 @@ class VolumeIntegrator
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<VolumeIntegrator>, ParamResult> factory(Logger &logger, const yafaray::Items<VolumeRegion> &volume_regions, const ParamMap &param_map);
 		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		virtual ~VolumeIntegrator() = default;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }

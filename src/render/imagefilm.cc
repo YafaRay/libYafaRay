@@ -1431,15 +1431,15 @@ ParamResult ImageFilm::defineCamera(const std::string &name, const ParamMap &par
 	return camera_integrator_result;
 }
 
-std::string ImageFilm::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string ImageFilm::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t<film>" << std::endl;
-	ss << "\t\t<film_parameters name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
-	ss << "\t\t</film_parameters>" << std::endl;
-	ss << "\t</film>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<film>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<film_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
+	ss << std::string(indent_level + 1, '\t') << "</film_parameters>" << std::endl;
+	ss << std::string(indent_level, '\t') << "</film>" << std::endl;
 	return ss.str();
 }
 

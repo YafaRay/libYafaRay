@@ -241,15 +241,15 @@ bool SurfaceIntegrator::render(RenderControl &render_control, RenderMonitor &ren
 	return true;
 }
 
-std::string SurfaceIntegrator::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string SurfaceIntegrator::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t<surface_integrator>" << std::endl;
-	ss << "\t\t<surface_integrator_parameters name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t</surface_integratorparameters>" << std::endl;
-	ss << "\t</surface_integrator>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<surface_integrator>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<surface_integrator_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level + 1, '\t') << "</surface_integratorparameters>" << std::endl;
+	ss << std::string(indent_level, '\t') << "</surface_integrator>" << std::endl;
 	return ss.str();
 }
 

@@ -36,7 +36,7 @@ class CurveObject final : public MeshObject
 	public:
 		inline static std::string getClassName() { return "CurveObject"; }
 		static std::pair<std::unique_ptr<CurveObject>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &params);
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;

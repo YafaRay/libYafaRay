@@ -191,13 +191,13 @@ std::pair<Point3f, Vec3f> SpherePrimitive::sample(const Uv<float> &uv, float tim
 {
 	return {}; //FIXME
 }
-std::string SpherePrimitive::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string SpherePrimitive::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t\t<primitive_sphere>" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(4, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t\t</primitive_sphere>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<primitive_sphere>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</primitive_sphere>" << std::endl;
 	return ss.str();
 }
 

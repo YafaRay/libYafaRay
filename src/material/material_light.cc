@@ -91,13 +91,13 @@ float LightMaterial::pdf(const MaterialData *mat_data, const SurfacePoint &sp, c
 	return 0.f;
 }
 
-std::string LightMaterial::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string LightMaterial::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t<material name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t</material>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<material name=\"" << getName() << "\">" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</material>" << std::endl;
 	return ss.str();
 }
 

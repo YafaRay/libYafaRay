@@ -74,15 +74,15 @@ std::string Container::exportToString(yafaray_ContainerExportType container_expo
 	ss << createExportStartSection(container_export_type);
 	for(auto scene : scenes_)
 	{
-		ss << scene->exportToString(container_export_type, only_export_non_default_parameters);
+		ss << scene->exportToString(1, container_export_type, only_export_non_default_parameters);
 	}
 	for(auto surface_integrator : surface_integrators_)
 	{
-		ss << surface_integrator->exportToString(container_export_type, only_export_non_default_parameters);
+		ss << surface_integrator->exportToString(1, container_export_type, only_export_non_default_parameters);
 	}
 	for(auto image_film : image_films_)
 	{
-		ss << image_film->exportToString(container_export_type, only_export_non_default_parameters);
+		ss << image_film->exportToString(1, container_export_type, only_export_non_default_parameters);
 	}
 	ss << createExportEndSection(container_export_type);
 	return ss.str();

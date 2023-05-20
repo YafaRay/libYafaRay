@@ -317,10 +317,6 @@ std::string ParamMap::exportMap(size_t indent_level, yafaray_ContainerExportType
 	std::stringstream ss;
 	for(const auto &[param_name, param] : items_)
 	{
-		for(size_t i = 0; i < indent_level; ++i)
-		{
-			ss << "\t";
-		}
 		const Parameter::Type type = param.type();
 		if(container_export_type == YAFARAY_CONTAINER_EXPORT_C)
 		{
@@ -372,6 +368,7 @@ std::string ParamMap::exportMap(size_t indent_level, yafaray_ContainerExportType
 		}
 		else if(container_export_type == YAFARAY_CONTAINER_EXPORT_PYTHON)
 		{
+			ss << std::string(indent_level, '\t');
 			if(type == Parameter::Type::Int)
 			{
 				int i = 0;
@@ -420,6 +417,7 @@ std::string ParamMap::exportMap(size_t indent_level, yafaray_ContainerExportType
 		}
 		else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
 		{
+			ss << std::string(indent_level, '\t');
 			if(type == Parameter::Type::Int)
 			{
 				int i = 0;

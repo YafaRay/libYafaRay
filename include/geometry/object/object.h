@@ -44,7 +44,7 @@ class Object
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Object>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
-		[[nodiscard]] virtual std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const = 0;
+		[[nodiscard]] virtual std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const = 0;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Object(ParamResult &param_result, const ParamMap &param_map, const Items <Object> &objects, const Items<Material> &materials, const Items<Light> &lights);
 		virtual ~Object() = default;

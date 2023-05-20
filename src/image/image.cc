@@ -232,13 +232,13 @@ std::string Image::getTypeNameShort(const Type &image_type)
 	return image_type.print();
 }
 
-std::string Image::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string Image::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t<image name=\"" << getName() << "\">" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
-	ss << "\t\t</image>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<image name=\"" << getName() << "\">" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
+	ss << std::string(indent_level, '\t') << "</image>" << std::endl;
 	return ss.str();
 }
 

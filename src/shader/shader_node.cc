@@ -64,13 +64,13 @@ ShaderNode::ShaderNode(Logger &logger, ParamResult &param_result, const ParamMap
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
-std::string ShaderNode::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string ShaderNode::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t\t<shader_node>" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(4, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t\t</shader_node>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<shader_node>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</shader_node>" << std::endl;
 	return ss.str();
 }
 

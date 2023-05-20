@@ -51,7 +51,7 @@ class Primitive
 	public:
 		virtual ~Primitive() = default;
 		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const { return {}; }
-		[[nodiscard]] virtual std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const = 0;
+		[[nodiscard]] virtual std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const = 0;
 		/*! return the object bound in global ("world") coordinates */
 		virtual Bound<float> getBound() const = 0;
 		virtual Bound<float> getBound(const Matrix4f &obj_to_world) const = 0;

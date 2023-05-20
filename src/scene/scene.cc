@@ -442,22 +442,22 @@ void Scene::setAcceleratorParamMap(const ParamMap &param_map)
 	}
 }
 
-std::string Scene::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string Scene::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t<scene>" << std::endl;
-	ss << "\t\t<scene_parameters name=\"" << getName() << "\">" << std::endl;
-	ss << "\t\t</scene_parameters>" << std::endl;
-	if(accelerator_) ss << accelerator_->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : images_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : textures_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : materials_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	if(background_) ss << background_->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : lights_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : objects_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &item : instances_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	for(const auto &[item, item_name, item_enabled] : volume_regions_) ss << item->exportToString(container_export_type, only_export_non_default_parameters);
-	ss << "\t</scene>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<scene>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<scene_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "</scene_parameters>" << std::endl;
+	if(accelerator_) ss << accelerator_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : images_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : textures_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : materials_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	if(background_) ss << background_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : lights_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : objects_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &item : instances_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[item, item_name, item_enabled] : volume_regions_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	ss << std::string(indent_level, '\t') << "</scene>" << std::endl;
 	return ss.str();
 }
 

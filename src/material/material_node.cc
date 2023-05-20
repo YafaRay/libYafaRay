@@ -179,17 +179,17 @@ void NodeMaterial::parseNodes(Logger &logger, std::vector<const ShaderNode *> &r
 	}
 }
 
-std::string NodeMaterial::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string NodeMaterial::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t<material name=\"" << getName() << "\">" << std::endl;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << std::string(indent_level, '\t') << "<material name=\"" << getName() << "\">" << std::endl;
 	for(const auto &[node_name, node] : nodes_map_)
 	{
-		if(node) ss << node->exportToString(container_export_type, only_export_non_default_parameters);
+		if(node) ss << node->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	}
-	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t</material>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</material>" << std::endl;
 	return ss.str();
 }
 

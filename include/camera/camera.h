@@ -46,7 +46,7 @@ class Camera
 		[[nodiscard]] virtual Type type() const = 0;
 		static std::pair<std::unique_ptr<Camera>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
 		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
 		Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
 		virtual ~Camera() = default; //Needed for proper destruction of derived classes

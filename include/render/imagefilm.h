@@ -68,7 +68,7 @@ class ImageFilm final
 		std::string getName() const { return name_; }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		/*! Initialize imageFilm for new rendering, i.e. set pixels black etc */
 		void init(RenderControl &render_control, RenderMonitor &render_monitor, const SurfaceIntegrator &surface_integrator);
 		/*! Prepare for next pass, i.e. reset area_cnt, check if pixels need resample...

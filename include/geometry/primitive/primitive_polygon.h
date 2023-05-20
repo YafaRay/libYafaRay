@@ -33,7 +33,7 @@ class PrimitivePolygon final : public FacePrimitive
 
 	public:
 		PrimitivePolygon(const FaceIndices<int> &face_indices, const MeshObject &mesh_object);
-		[[nodiscard]] std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const override;
 
 	private:
 		std::pair<T, Uv<T>> intersect(const Point<T, 3> &from, const Vec<T, 3> &dir, T time) const override;
@@ -257,10 +257,10 @@ inline ShapePolygon<T, N> PrimitivePolygon<T, N, MotionBlur>::getShapeAtTime(T t
 }
 
 template<typename T, size_t N, MotionBlurType MotionBlur>
-std::string PrimitivePolygon<T, N, MotionBlur>::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string PrimitivePolygon<T, N, MotionBlur>::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t\t<f";
+	ss << std::string(indent_level, '\t') << "<f";
 	for(size_t i = 0; i < N; ++i)
 	{
 		ss << " " << static_cast<char>('a' + i) << "=\"" << indices_[i].vertex_ << "\"";

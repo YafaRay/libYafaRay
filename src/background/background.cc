@@ -83,13 +83,13 @@ Background::Background(Logger &logger, ParamResult &param_result, const ParamMap
 	//Empty
 }
 
-std::string Background::exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+std::string Background::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
 {
 	std::stringstream ss;
-	ss << "\t\t<background>" << std::endl;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << param_map.exportMap(3, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << "\t\t</background>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<background>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</background>" << std::endl;
 	return ss.str();
 }
 

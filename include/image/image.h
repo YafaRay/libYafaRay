@@ -54,7 +54,7 @@ class Image
 		std::string getName() const { return name_; }
 		[[nodiscard]] size_t getId() const { return id_; }
 		static std::pair<std::unique_ptr<Image>, ParamResult> factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map);
-		std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		struct Type : public Enum<Type>
 		{
