@@ -94,7 +94,7 @@ std::string Light::exportToString(size_t indent_level, yafaray_ContainerExportTy
 {
 	std::stringstream ss;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << std::string(indent_level, '\t') << "<light>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<light name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
 	ss << std::string(indent_level, '\t') << "</light>" << std::endl;
 	return ss.str();
