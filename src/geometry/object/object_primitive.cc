@@ -31,9 +31,9 @@ std::string PrimitiveObject::exportToString(size_t indent_level, yafaray_Contain
 	std::stringstream ss;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
 	ss << std::string(indent_level, '\t') << "<object>" << std::endl;
-	ss << std::string(indent_level, '\t') << "<object_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << std::string(indent_level, '\t') << "<parameters name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << std::string(indent_level, '\t') << "</object_parameters>" << std::endl;
+	ss << std::string(indent_level, '\t') << "</parameters>" << std::endl;
 	for(const auto primitive : getPrimitives()) ss << primitive->exportToString(indent_level, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</object>" << std::endl;
 	return ss.str();

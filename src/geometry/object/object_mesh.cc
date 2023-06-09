@@ -280,25 +280,25 @@ std::string MeshObject::exportToString(size_t indent_level, yafaray_ContainerExp
 	std::stringstream ss;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
 	ss << std::string(indent_level, '\t') << "<object>" << std::endl;
-	ss << std::string(indent_level + 1, '\t') << "<object_parameters name=\"" << getName() << "\">" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<parameters name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
-	ss << std::string(indent_level + 1, '\t') << "</object_parameters>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "</parameters>" << std::endl;
 	for(const auto &time_step : time_steps_)
 	{
 		for(size_t i = 0; i < time_step.points_.size(); ++i)
 		{
 			const auto &point{time_step.points_[i]};
-			ss << std::string(indent_level + 1, '\t') << "<p x=\"" << point[0] << "\", y=\"" << point[1] << "\" z=\"" << point[2] << "\"";
+			ss << std::string(indent_level + 1, '\t') << "<p x=\"" << point[0] << "\" y=\"" << point[1] << "\" z=\"" << point[2] << "\"";
 			if(i < time_step.orco_points_.size())
 			{
 				const auto &orco{time_step.orco_points_[i]};
-				ss << " ox=\"" << orco[0] << "\", oy=\"" << orco[1] << "\" oz=\"" << orco[2] << "\"";
+				ss << " ox=\"" << orco[0] << "\" oy=\"" << orco[1] << "\" oz=\"" << orco[2] << "\"";
 			}
 			ss << "/>" << std::endl;
 		}
 		for(const auto &vertex_normal : time_step.vertices_normals_)
 		{
-			ss << std::string(indent_level + 1, '\t') << "<n x=\"" << vertex_normal[0] << "\", y=\"" << vertex_normal[1] << "\" z=\"" << vertex_normal[2] << "\"/>" << std::endl;
+			ss << std::string(indent_level + 1, '\t') << "<n x=\"" << vertex_normal[0] << "\" y=\"" << vertex_normal[1] << "\" z=\"" << vertex_normal[2] << "\"/>" << std::endl;
 		}
 	}
 	for(const auto primitive : getPrimitives()) ss << primitive->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);

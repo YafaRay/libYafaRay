@@ -122,7 +122,7 @@ std::string Container::createExportStartSection(yafaray_ContainerExportType cont
 	{
 		ss << std::boolalpha;
 		ss << "<?xml version=\"1.0\"?>\n";
-		ss << "<yafaray_xml format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n";
+		ss << "<yafaray_container format_version=\"" << buildinfo::getVersionMajor() << "." << buildinfo::getVersionMinor() << "." << buildinfo::getVersionPatch() << "\">\n";
 	}
 	return ss.str();
 }
@@ -149,7 +149,7 @@ std::string Container::createExportEndSection(yafaray_ContainerExportType contai
 	}
 	else if(container_export_type == YAFARAY_CONTAINER_EXPORT_XML)
 	{
-		ss << "</yafaray_xml>\n";
+		ss << "</yafaray_container>\n";
 	}
 	return ss.str();
 }

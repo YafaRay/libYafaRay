@@ -335,9 +335,9 @@ std::pair<size_t, ParamResult> ExportXml::createObject(const std::string &name) 
 {
 	n_uvs_ = 0;
 	file_ << "\n<object>\n";
-	file_ << "\t<object_parameters name=\"" << name << "\">\n";
+	file_ << "\t<parameters name=\"" << name << "\">\n";
 	writeParamMap(*params_, 2);
-	file_ << "\t</object_parameters>\n";
+	file_ << "\t</parameters>\n";
 	++next_obj_;
 	return {next_obj_ - 1, ParamResult{}};
 }
