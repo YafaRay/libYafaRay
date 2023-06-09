@@ -96,11 +96,11 @@ std::string Instance::exportToString(size_t indent_level, yafaray_ContainerExpor
 	{
 		if(base_id.base_id_type_ == BaseId::Type::Object)
 		{
-			ss << std::string(indent_level + 1, '\t') << "<object name=\"" << objects.findNameFromId(base_id.id_).first << "\"/>" << std::endl;
+			ss << std::string(indent_level + 1, '\t') << "<object_ref name=\"" << objects.findNameFromId(base_id.id_).first << "\"/>" << std::endl;
 		}
 		else if(base_id.base_id_type_ == BaseId::Type::Instance)
 		{
-			ss << std::string(indent_level + 1, '\t') << "<instance id=\"" << base_id.id_ << "\"/>" << std::endl;
+			ss << std::string(indent_level + 1, '\t') << "<instance_ref id=\"" << base_id.id_ << "\"/>" << std::endl;
 		}
 	}
 	for(const auto &time_step : time_steps_)
