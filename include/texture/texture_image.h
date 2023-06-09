@@ -41,7 +41,7 @@ class ImageTexture final : public Texture
 		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id);
+		ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id, const Items<Texture> &textures);
 
 	private:
 		struct ClipMode : public Enum<ClipMode>

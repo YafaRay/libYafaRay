@@ -35,7 +35,7 @@ class VoronoiTexture final : public Texture
 		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const override { return params_.getParamMetaMap(); }
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const override;
-		VoronoiTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		VoronoiTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Texture> &textures);
 
 	private:
 		struct ColorMode : public Enum<ColorMode>

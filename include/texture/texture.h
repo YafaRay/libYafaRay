@@ -35,6 +35,7 @@ namespace yafaray {
 class ParamMap;
 class Scene;
 class MipMapParams;
+template <typename T> class Items;
 class Logger;
 
 struct InterpolationType : public Enum<InterpolationType>
@@ -60,9 +61,10 @@ class Texture
 		[[nodiscard]] virtual std::map<std::string, const ParamMeta *> getParamMetaMap() const = 0;
 		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		[[nodiscard]] virtual ParamMap getAsParamMap(bool only_non_default) const;
-		Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Texture> &textures);
 		virtual ~Texture() = default;
 		void setId(size_t id) { id_ = id; }
+		std::string getName() const;
 		[[nodiscard]] size_t getId() const { return id_; }
 
 		/* indicate wether the the texture is discrete (e.g. image map) or continuous */
@@ -141,6 +143,7 @@ class Texture
 		};
 		size_t id_{0};
 		std::unique_ptr<ColorRamp> color_ramp_;
+		const Items<Texture> &textures_;
 		Logger &logger_;
 };
 

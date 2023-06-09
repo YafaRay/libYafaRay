@@ -27,6 +27,7 @@
 #include "texture/texture_voronoi.h"
 #include "texture/texture_wood.h"
 #include "texture/texture_image.h"
+#include "common/items.h"
 #include "param/param.h"
 
 namespace yafaray {
@@ -122,7 +123,7 @@ std::pair<std::unique_ptr<Texture>, ParamResult> Texture::factory(Logger &logger
 	}
 }
 
-Texture::Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
+Texture::Texture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Texture> &textures) : params_{param_result, param_map}, textures_{textures}, logger_{logger}
 {
 	if(params_.ramp_num_items_ > 0)
 	{
@@ -290,10 +291,15 @@ std::string Texture::exportToString(size_t indent_level, yafaray_ContainerExport
 {
 	std::stringstream ss;
 	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
-	ss << std::string(indent_level, '\t') << "<texture>" << std::endl;
+	ss << std::string(indent_level, '\t') << "<texture name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
 	ss << std::string(indent_level, '\t') << "</texture>" << std::endl;
 	return ss.str();
+}
+
+std::string Texture::getName() const
+{
+	return textures_.findNameFromId(id_).first;
 }
 
 } //namespace yafaray

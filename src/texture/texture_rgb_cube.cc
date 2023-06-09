@@ -18,6 +18,7 @@
 
 #include "texture/texture_rgb_cube.h"
 #include "param/param.h"
+#include "scene/scene.h"
 
 namespace yafaray {
 
@@ -45,12 +46,12 @@ ParamMap RgbCubeTexture::getAsParamMap(bool only_non_default) const
 std::pair<std::unique_ptr<Texture>, ParamResult> RgbCubeTexture::factory(Logger &logger, const Scene &scene, const std::string &name, const ParamMap &param_map)
 {
 	auto param_result{class_meta::check<Params>(param_map, {"type"}, {"ramp_item_"})};
-	auto texture {std::make_unique<RgbCubeTexture>(logger, param_result, param_map)};
+	auto texture {std::make_unique<RgbCubeTexture>(logger, param_result, param_map, scene.getTextures())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
-RgbCubeTexture::RgbCubeTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
+RgbCubeTexture::RgbCubeTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items <Texture> &textures) : ParentClassType_t{logger, param_result, param_map, textures}, params_{param_result, param_map}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }

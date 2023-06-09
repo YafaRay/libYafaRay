@@ -126,12 +126,12 @@ std::pair<std::unique_ptr<Texture>, ParamResult> ImageTexture::factory(Logger &l
 		logger.logError("ImageTexture: Couldn't load image file, dropping texture.");
 		return {nullptr, ParamResult{YAFARAY_RESULT_ERROR_WHILE_CREATING}};
 	}
-	auto texture {std::make_unique<ImageTexture>(logger, param_result, param_map, scene.getImages(), image_id)};
+	auto texture {std::make_unique<ImageTexture>(logger, param_result, param_map, scene.getImages(), image_id, scene.getTextures())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ThisClassType_t>(name, {"type"}));
 	return {std::move(texture), param_result};
 }
 
-ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id) : ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
+ImageTexture::ImageTexture(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const Items<Image> &images, size_t image_id, const Items<Texture> &textures) : ParentClassType_t{logger, param_result, param_map, textures}, params_{param_result, param_map}, image_id_{image_id}, images_{images}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	const Image *image{images.getById(image_id_).first};
