@@ -41,7 +41,7 @@ std::pair<size_t, ParamResult> Items<T>::createItem(Logger &logger, Items <T> &m
 	}
 	std::unique_ptr<T> new_item;
 	ParamResult param_result;
-	if constexpr (std::is_same_v<T, Light> || std::is_same_v<T, Texture> || std::is_same_v<T, Image> || std::is_same_v<T, VolumeRegion> || std::is_same_v<T, Object>) std::tie(new_item, param_result) = T::factory(logger, items_container, name, param_map);
+	if constexpr (std::is_same_v<T, Light> || std::is_same_v<T, Texture> || std::is_same_v<T, Image> || std::is_same_v<T, VolumeRegion> || std::is_same_v<T, Object> || std::is_same_v<T, ImageOutput>) std::tie(new_item, param_result) = T::factory(logger, items_container, name, param_map);
 	else std::tie(new_item, param_result) = T::factory(logger, name, param_map);
 	if(new_item)
 	{

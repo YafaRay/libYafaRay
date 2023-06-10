@@ -33,6 +33,7 @@
 
 namespace yafaray {
 
+class ImageFilm;
 class ColorLayers;
 class Format;
 template <typename T> class Items;
@@ -45,14 +46,15 @@ class ImageOutput final
 		static Type type() ;
 		void setId(size_t id) { id_ = id; }
 		[[nodiscard]] size_t getId() const { return id_; }
-		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const std::string &name, const ParamMap &param_map);
+		static std::pair<std::unique_ptr<ImageOutput>, ParamResult> factory(Logger &logger, const ImageFilm &image_film, const std::string &name, const ParamMap &param_map);
+		[[nodiscard]] std::map<std::string, const ParamMeta *> getParamMetaMap() const { return params_.getParamMetaMap(); }
 		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 		static std::string printMeta(const std::vector<std::string> &excluded_params) { return class_meta::print<Params>(excluded_params); }
 		[[nodiscard]] ParamMap getAsParamMap(bool only_non_default) const;
-		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map);
+		ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::unique_ptr<Items<ImageOutput>> &outputs);
 		void flush(const RenderMonitor &render_monitor, const RenderControl &render_control);
 		void init(const Size2i &size, const ImageLayers *exported_image_layers, const std::string &camera_name);
-		[[nodiscard]] std::string getName() const { return name_; }
+		[[nodiscard]] std::string getName() const;
 		std::string printBadge(const RenderMonitor &render_monitor, const RenderControl &render_control) const;
 		std::unique_ptr<Image> generateBadgeImage(const RenderMonitor &render_monitor, const RenderControl &render_control) const;
 
@@ -98,12 +100,12 @@ class ImageOutput final
 		void saveImageFileMultiChannel(const std::string &filename, Format *format, const RenderMonitor &render_monitor, const RenderControl &render_control);
 
 		size_t id_{0};
-		std::string name_ = "out";
 		ColorSpace color_space_{params_.color_space_};
 		float gamma_{params_.gamma_};
 		const DenoiseParams denoise_params_{params_.denoise_enabled_, params_.denoise_h_lum_, params_.denoise_h_col_, params_.denoise_mix_};
 		const ImageLayers *image_layers_ = nullptr;
 		std::string camera_name_;
+		const std::unique_ptr<Items<ImageOutput>> &outputs_;
 		Logger &logger_;
 		Badge badge_{
 			logger_,

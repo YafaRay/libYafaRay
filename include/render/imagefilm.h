@@ -138,6 +138,7 @@ class ImageFilm final
 		const EdgeToonParams *getEdgeToonParams() const { return &edge_toon_params_; }
 		const AaNoiseParams *getAaParameters() const { return &aa_noise_params_; }
 		const MaskParams *getMaskParams() const { return &mask_params_; }
+		const std::unique_ptr<Items<ImageOutput>> &getOutputs() const { return outputs_; }
 
 	private:
 		struct FilterType : public Enum<FilterType>

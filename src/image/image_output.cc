@@ -26,6 +26,7 @@
 #include "format/format.h"
 #include "image/image_manipulation.h"
 #include "render/render_monitor.h"
+#include "render/imagefilm.h"
 
 namespace yafaray {
 
@@ -111,16 +112,16 @@ ParamMap ImageOutput::getAsParamMap(bool only_non_default) const
 	return param_map;
 }
 
-std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const std::string &name, const ParamMap &param_map)
+std::pair<std::unique_ptr<ImageOutput>, ParamResult> ImageOutput::factory(Logger &logger, const ImageFilm &image_film, const std::string &name, const ParamMap &param_map)
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + "::factory 'raw' ParamMap\n" + param_map.logContents());
 	auto param_result{class_meta::check<Params>(param_map, {}, {})};
-	auto output {std::make_unique<ImageOutput>(logger, param_result, param_map)};
+	auto output {std::make_unique<ImageOutput>(logger, param_result, param_map, image_film.getOutputs())};
 	if(param_result.notOk()) logger.logWarning(param_result.print<ImageOutput>(name, {}));
 	return {std::move(output), param_result};
 }
 
-ImageOutput::ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map) : params_{param_result, param_map}, logger_{logger}
+ImageOutput::ImageOutput(Logger &logger, ParamResult &param_result, const ParamMap &param_map, const std::unique_ptr<Items<ImageOutput>> &outputs) : params_{param_result, param_map}, outputs_{outputs}, logger_{logger}
 {
 	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 	if(params_.color_space_ == ColorSpace::RawManualGamma)
@@ -216,13 +217,14 @@ void ImageOutput::flush(const RenderMonitor &render_monitor, const RenderControl
 
 void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type layer_type, Format *format, const RenderMonitor &render_monitor, const RenderControl &render_control)
 {
-	if(render_control.inProgress()) logger_.logInfo(name_, ": Autosaving partial render (", math::roundFloatPrecision(render_monitor.currentPassPercent(), 0.01), "% of pass ", render_monitor.currentPass(), " of ", render_monitor.totalPasses(), ") file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
-	else logger_.logInfo(name_, ": Saving file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
+	const std::string image_output_name{getName()};
+	if(render_control.inProgress()) logger_.logInfo(image_output_name, ": Autosaving partial render (", math::roundFloatPrecision(render_monitor.currentPassPercent(), 0.01), "% of pass ", render_monitor.currentPass(), " of ", render_monitor.totalPasses(), ") file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
+	else logger_.logInfo(image_output_name, ": Saving file as \"", filename, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 
 	auto image{(*image_layers_)(layer_type).image_};
 	if(!image)
 	{
-		logger_.logWarning(name_, ": Image does not exist (it is null) and could not be saved.");
+		logger_.logWarning(image_output_name, ": Image does not exist (it is null) and could not be saved.");
 		return;
 	}
 
@@ -234,7 +236,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 		image = image_manipulation::getComposedImage(logger_, image.get(), badge_image.get(), badge_image_position);
 		if(!image)
 		{
-			logger_.logWarning(name_, ": Image could not be composed with badge and could not be saved.");
+			logger_.logWarning(image_output_name, ": Image could not be composed with badge and could not be saved.");
 			return;
 		}
 	}
@@ -244,7 +246,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	{
 		auto image_denoised{image_manipulation::getDenoisedLdrImage(logger_, image.get(), denoise_params_)};
 		if(image_denoised) image_layer.image_ = std::move(image_denoised);
-		else if(logger_.isVerbose()) logger_.logVerbose(name_, ": Denoise was not possible, saving image without denoise postprocessing.");
+		else if(logger_.isVerbose()) logger_.logVerbose(image_output_name, ": Denoise was not possible, saving image without denoise postprocessing.");
 	}
 	format->saveToFile(filename, image_layer, color_space_, gamma_, params_.alpha_premultiply_);
 
@@ -252,7 +254,7 @@ void ImageOutput::saveImageFile(const std::string &filename, LayerDef::Type laye
 	{
 		Path file_path(filename);
 		std::string file_name_alpha = file_path.getBaseName() + "_alpha." + file_path.getExtension();
-		logger_.logInfo(name_, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
+		logger_.logInfo(image_output_name, ": Saving separate alpha channel file as \"", file_name_alpha, "\"...  ", image_manipulation::printDenoiseParams(denoise_params_));
 		format->saveAlphaChannelOnlyToFile(file_name_alpha, image_layer);
 	}
 }
@@ -278,6 +280,22 @@ void ImageOutput::saveImageFileMultiChannel(const std::string &filename, Format 
 ImageOutput::Type ImageOutput::type()
 {
 	return Type::ImageOutput;
+}
+
+std::string ImageOutput::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << std::string(indent_level, '\t') << "<output name=\"" << getName() << "\">" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</output>" << std::endl;
+	return ss.str();
+}
+
+std::string ImageOutput::getName() const
+{
+	if(outputs_) return outputs_->findNameFromId(id_).first;
+	else return {};
 }
 
 } //namespace yafaray
