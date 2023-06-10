@@ -37,10 +37,10 @@ char *yafaray_getFilmName(yafaray_Film *film)
 	return createCharString(reinterpret_cast<const yafaray::ImageFilm *>(film)->getName());
 }
 
-yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map)
+yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const yafaray_ParamMap *param_map)
 {
-	if(!film || !name) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
-	auto creation_result{reinterpret_cast<yafaray::ImageFilm *>(film)->defineCamera(name, *reinterpret_cast<const yafaray::ParamMap *>(param_map))};
+	if(!film) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+	auto creation_result{reinterpret_cast<yafaray::ImageFilm *>(film)->defineCamera(*reinterpret_cast<const yafaray::ParamMap *>(param_map))};
 	return static_cast<yafaray_ResultFlags>(creation_result.flags_.value());
 }
 

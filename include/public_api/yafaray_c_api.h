@@ -154,7 +154,7 @@ YAFARAY_C_API_EXPORT void yafaray_destroyFilm(yafaray_Film *film);
 YAFARAY_C_API_EXPORT char *yafaray_getFilmName(yafaray_Film *film);
 YAFARAY_C_API_EXPORT int yafaray_getFilmWidth(const yafaray_Film *film);
 YAFARAY_C_API_EXPORT int yafaray_getFilmHeight(const yafaray_Film *film);
-YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
+YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_defineCamera(yafaray_Film *film, const yafaray_ParamMap *param_map);
 YAFARAY_C_API_EXPORT yafaray_ResultFlags yafaray_createOutput(yafaray_Film *film, const char *name, const yafaray_ParamMap *param_map);
 YAFARAY_C_API_EXPORT void yafaray_defineLayer(yafaray_Film *film, const yafaray_ParamMap *param_map);
 YAFARAY_C_API_EXPORT char *yafaray_getLayersTable(const yafaray_Film *film);

@@ -118,7 +118,7 @@ class ImageFilm final
 		void defineLayer(const ParamMap &param_map);
 		void defineLayer(std::string &&layer_type_name, std::string &&image_type_name, std::string &&exported_image_type_name, std::string &&exported_image_name);
 		void defineLayer(LayerDef::Type layer_type, Image::Type image_type = Image::Type{Image::Type::None}, Image::Type exported_image_type = Image::Type{Image::Type::None}, const std::string &exported_image_name = "");
-		ParamResult defineCamera(const std::string &name, const ParamMap &param_map);
+		ParamResult defineCamera(const ParamMap &param_map);
 		const Camera *getCamera() const { return camera_.get(); }
 		std::pair<size_t, ParamResult> createOutput(const std::string &name, const ParamMap &param_map);
 		bool disableOutput(const std::string &name);

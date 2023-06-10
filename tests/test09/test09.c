@@ -487,12 +487,12 @@ int main()
 	yafaray_setParamMapVector(param_map, "to", 8.03447, -6.65603, 7.58301);
 	yafaray_setParamMapString(param_map, "type", "perspective");
 	yafaray_setParamMapVector(param_map, "up", 8.25644, -6.8447, 8.9669);
-	yafaray_defineCamera(film_1, "Camera", param_map);
+	yafaray_defineCamera(film_1, param_map);
 	yafaray_setParamMapInt(param_map, "resx", 240);
 	yafaray_setParamMapInt(param_map, "resy", 135);
 	yafaray_setParamMapVector(param_map, "from", 7.64791, -7.22615, 8.1295);
 	yafaray_setParamMapVector(param_map, "to", 7.03447, -6.65603, 7.58301);
-	yafaray_defineCamera(film_2, "Camera", param_map);
+	yafaray_defineCamera(film_2, param_map);
 
 	/* Creating image output */
 	yafaray_clearParamMap(param_map);

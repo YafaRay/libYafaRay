@@ -109,4 +109,14 @@ Camera::Camera(Logger &logger, ParamResult &param_result, const ParamMap &param_
 	far_plane_.p_ = params_.from_ + cam_z_ * params_.far_clip_distance_;
 }
 
+std::string Camera::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << std::string(indent_level, '\t') << "<camera>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</camera>" << std::endl;
+	return ss.str();
+}
+
 } //namespace yafaray

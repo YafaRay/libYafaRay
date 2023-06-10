@@ -1419,12 +1419,12 @@ std::pair<size_t, ParamResult> ImageFilm::createOutput(const std::string &name, 
 	return result;
 }
 
-ParamResult ImageFilm::defineCamera(const std::string &name, const ParamMap &param_map)
+ParamResult ImageFilm::defineCamera(const ParamMap &param_map)
 {
-	auto [camera, camera_integrator_result]{Camera::factory(logger_, name, param_map)};
+	auto [camera, camera_integrator_result]{Camera::factory(logger_, getName() + " camera", param_map)};
 	if(logger_.isVerbose() && camera)
 	{
-		logger_.logVerbose(getClassName(), " '", getName(), "': Added ", camera->getClassName(), " '", name, "' (", camera->type().print(), ")!");
+		logger_.logVerbose(getClassName(), " '", getName(), "': Added ", camera->getClassName(), " (", camera->type().print(), ")!");
 	}
 	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
 	camera_ = std::move(camera);
@@ -1439,6 +1439,7 @@ std::string ImageFilm::exportToString(size_t indent_level, yafaray_ContainerExpo
 	ss << std::string(indent_level + 1, '\t') << "<parameters name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
 	ss << std::string(indent_level + 1, '\t') << "</parameters>" << std::endl;
+	ss << camera_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</film>" << std::endl;
 	return ss.str();
 }
