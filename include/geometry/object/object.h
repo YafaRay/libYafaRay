@@ -77,7 +77,7 @@ class Object
 		virtual bool hasVerticesNormals(unsigned char time_step) const { return false; }
 		virtual int numVerticesNormals(unsigned char time_step) const { return 0; }
 		virtual int numVertices(unsigned char time_step) const { return 0; }
-		virtual void setSmooth(bool smooth) { }
+		virtual void setSmooth(bool smooth, float smooth_angle) { }
 		virtual bool smoothVerticesNormals(Logger &logger, float angle) { return false; }
 
 	protected:

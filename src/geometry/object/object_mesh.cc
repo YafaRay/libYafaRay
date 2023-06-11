@@ -261,7 +261,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			}
 		}
 	}
-	setSmooth(true);
+	setSmooth(true, angle);
 	return true;
 }
 
@@ -313,6 +313,7 @@ std::string MeshObject::exportToString(size_t indent_level, yafaray_ContainerExp
 		}
 		ss << primitive->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	}
+	if(isSmooth()) ss << std::string(indent_level + 1, '\t') << "<smooth angle=\"" << getSmoothAngle() << "\"/>" << std::endl;
 	ss << std::string(indent_level, '\t') << "</object>" << std::endl;
 	return ss.str();
 	//FIXME PENDING UV and TIME_STEPS!

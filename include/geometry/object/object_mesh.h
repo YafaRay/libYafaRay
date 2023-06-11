@@ -59,12 +59,13 @@ class MeshObject : public Object
 		bool hasOrco(unsigned char time_step) const { return !time_steps_[time_step].orco_points_.empty(); }
 		bool hasUv() const { return !uv_values_.empty(); }
 		bool isSmooth() const { return is_smooth_; }
+		float getSmoothAngle() const { return smooth_angle_; }
 		bool hasVerticesNormals(unsigned char time_step) const override { return !time_steps_[time_step].vertices_normals_.empty(); }
 		void addPoint(Point3f &&p, unsigned char time_step) override { time_steps_[time_step].points_.emplace_back(p); }
 		void addOrcoPoint(Point3f &&p, unsigned char time_step) override { time_steps_[time_step].orco_points_.emplace_back(p); }
 		void addVertexNormal(Vec3f &&n, unsigned char time_step) override;
 		int addUvValue(Uv<float> &&uv) override { uv_values_.emplace_back(uv); return static_cast<int>(uv_values_.size()) - 1; }
-		void setSmooth(bool smooth) override { is_smooth_ = smooth; }
+		void setSmooth(bool smooth, float smooth_angle) override { is_smooth_ = smooth; smooth_angle_ = smooth_angle; }
 		bool smoothVerticesNormals(Logger &logger, float angle) override;
 		bool calculateObject(size_t material_id) override;
 		bool hasMotionBlurBezier() const { return Object::params_.motion_blur_bezier_; }
@@ -100,6 +101,7 @@ class MeshObject : public Object
 		std::vector<std::unique_ptr<FacePrimitive>> faces_;
 		std::vector<Uv<float>> uv_values_;
 		bool is_smooth_ = false;
+		float smooth_angle_ = 0.f;
 };
 
 } //namespace yafaray

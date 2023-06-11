@@ -367,6 +367,7 @@ int main()
 	yafaray_addTriangle(scene, object_id, 0, 6, 4, material_id);
 	yafaray_addTriangle(scene, object_id, 5, 7, 3, material_id);
 	yafaray_addTriangle(scene, object_id, 5, 3, 1, material_id);
+	yafaray_smoothObjectMesh(scene, object_id, 100.0);
 	yafaray_initObject(scene, object_id, material_id);
 
 	yafaray_clearParamMap(param_map);
@@ -460,11 +461,11 @@ int main()
 
 	/* Creating surface integrator */
 	yafaray_clearParamMap(param_map);
-	/* yafaray_setParamMapString(param_map, "type", "directlighting"); */
-	yafaray_setParamMapString(param_map, "type", "photonmapping");
+	yafaray_setParamMapString(param_map, "type", "directlighting");
+	/*yafaray_setParamMapString(param_map, "type", "photonmapping");*/
 	yafaray_setParamMapInt(param_map, "raydepth", 2);
 	yafaray_setParamMapInt(param_map, "shadowDepth", 2);
-	yafaray_setParamMapInt(param_map, "diffuse_photons", 10000000);
+	/*yafaray_setParamMapInt(param_map, "diffuse_photons", 10000000);*/
 	surface_integrator = yafaray_createSurfaceIntegrator(logger, "surface integrator", param_map);
 
 	/* Creating films */
