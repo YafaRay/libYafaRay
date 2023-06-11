@@ -18,6 +18,8 @@
 
 #include "common/layers.h"
 #include "color/color.h"
+#include "common/layer.h"
+
 #include <sstream>
 
 namespace yafaray {
@@ -40,12 +42,24 @@ std::string Layer::print() const
 {
 	std::stringstream ss;
 	ss << "Layer '" << getTypeName() << (isExported() ? "' (exported)" : "' (internal)");
-	if(hasInternalImage()) ss << " with internal image type: '" << getImageTypeName() << "'";
+	if(hasInternalImage()) ss << " with internal image type: '" << getImageTypeNameLong() << "'";
 	if(isExported())
 	{
 		ss << " with exported image type: '" << getExportedImageTypeNameLong() << "'";
 		if(!getExportedImageName().empty()) ss << " and name: '" << getExportedImageName() << "'";
 	}
+	return ss.str();
+}
+
+std::string Layer::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	ss << std::string(indent_level, '\t') << "<layer>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<exported_image_name sval=\"" << getExportedImageName() << "\"/>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<exported_image_type sval=\"" << getExportedImageTypeNameShort() << "\"/>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<image_type sval=\"" << getImageTypeNameShort() << "\"/>" << std::endl;
+	ss << std::string(indent_level + 1, '\t') << "<type sval=\"" << getTypeName() << "\"/>" << std::endl;
+	ss << std::string(indent_level, '\t') << "</layer>" << std::endl;
 	return ss.str();
 }
 

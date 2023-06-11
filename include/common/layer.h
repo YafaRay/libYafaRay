@@ -44,7 +44,8 @@ class Layer final
 		bool hasInternalImage() const { return (image_type_ != Image::Type::None); }
 		bool isExported() const { return (exported_image_type_ != Image::Type::None); }
 		Image::Type getImageType() const { return image_type_; }
-		std::string getImageTypeName() const { return Image::getTypeNameLong(image_type_); }
+		std::string getImageTypeNameLong() const { return Image::getTypeNameLong(image_type_); }
+		std::string getImageTypeNameShort() const { return Image::getTypeNameShort(image_type_); }
 		Image::Type getExportedImageType() const { return exported_image_type_; }
 		std::string getExportedImageTypeNameLong() const { return Image::getTypeNameLong(exported_image_type_); }
 		std::string getExportedImageTypeNameShort() const { return Image::getTypeNameShort(exported_image_type_); }
@@ -58,6 +59,8 @@ class Layer final
 		void setExportedImageName(const std::string &exported_image_name) { exported_image_name_ = exported_image_name; }
 
 		static Rgba postProcess(const Rgba &color, LayerDef::Type layer_type, ColorSpace color_space, float gamma, bool alpha_premultiply);
+
+		[[nodiscard]] std::string exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
 
 	private:
 		LayerDef::Type type_ = LayerDef::Type::Disabled;

@@ -1440,6 +1440,7 @@ std::string ImageFilm::exportToString(size_t indent_level, yafaray_ContainerExpo
 	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, params_.getParamMetaMap(), {});
 	ss << std::string(indent_level + 1, '\t') << "</parameters>" << std::endl;
 	ss << camera_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	for(const auto &[layer_type, layer] : layers_) ss << layer.exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	for(const auto &[item, item_name, item_enabled] : *outputs_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</film>" << std::endl;
 	return ss.str();
