@@ -190,6 +190,11 @@ bool File::append(const std::string &str)
 	return File::append(str.data(), str.size()) && File::append(&zero, sizeof(char));
 }
 
+bool File::appendText(const std::string &str)
+{
+	return File::append(str.data(), str.size());
+}
+
 bool File::append(const char *buffer, size_t size)
 {
 	if(!fp_) return false;

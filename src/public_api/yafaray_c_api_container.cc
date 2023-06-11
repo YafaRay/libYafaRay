@@ -114,3 +114,9 @@ char *yafaray_exportContainerToString(const yafaray_Container *container, yafara
 	if(!container) return NULL;
 	return createCharString(reinterpret_cast<const yafaray::Container *>(container)->exportToString(container_export_type, static_cast<bool>(only_export_non_default_parameters)));
 }
+
+yafaray_ResultFlags yafaray_exportContainerToFile(const yafaray_Container *container, yafaray_ContainerExportType container_export_type, yafaray_Bool only_export_non_default_parameters, const char *file_path)
+{
+	if(!container) return YAFARAY_RESULT_ERROR_NOT_FOUND;
+	return reinterpret_cast<const yafaray::Container *>(container)->exportToFile(container_export_type, static_cast<bool>(only_export_non_default_parameters), file_path);
+}

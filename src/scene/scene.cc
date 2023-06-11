@@ -36,6 +36,7 @@
 #include "param/param_result.h"
 #include "volume/region/volume_region.h"
 #include "render/render_control.h"
+#include "common/file.h"
 #include <memory>
 
 namespace yafaray {
@@ -459,6 +460,24 @@ std::string Scene::exportToString(size_t indent_level, yafaray_ContainerExportTy
 	for(const auto &[item, item_name, item_enabled] : volume_regions_) ss << item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</scene>" << std::endl;
 	return ss.str();
+}
+
+bool Scene::exportToFile(File &file, size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	file.appendText(std::string(indent_level, '\t') + "<scene>\n");
+	file.appendText(std::string(indent_level + 1, '\t') + "<parameters name=\"" + getName() + "\">\n");
+	file.appendText(std::string(indent_level + 1, '\t') + "</parameters>\n");
+	if(accelerator_) file.appendText(accelerator_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &[item, item_name, item_enabled] : images_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &[item, item_name, item_enabled] : textures_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &[item, item_name, item_enabled] : materials_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	if(background_) file.appendText(background_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &[item, item_name, item_enabled] : lights_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &[item, item_name, item_enabled] : objects_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	for(const auto &item : instances_) file.appendText(item->exportToString(indent_level + 1, container_export_type, *this));
+	for(const auto &[item, item_name, item_enabled] : volume_regions_) file.appendText(item->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters));
+	file.appendText(std::string(indent_level, '\t') + "</scene>\n");
+	return true;
 }
 
 } //namespace yafaray

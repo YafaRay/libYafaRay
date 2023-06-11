@@ -21,6 +21,7 @@
 #include "render/imagefilm.h"
 #include "integrator/surface/integrator_surface.h"
 #include "common/version_build_info.h"
+#include "common/file.h"
 #include <sstream>
 
 namespace yafaray {
@@ -88,6 +89,30 @@ std::string Container::exportToString(yafaray_ContainerExportType container_expo
 	return ss.str();
 }
 
+yafaray_ResultFlags Container::exportToFile(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::string &file_path) const
+{
+	File file{file_path};
+	const bool file_open_result{file.open("w")};
+	if(!file_open_result) return YAFARAY_RESULT_ERROR_WHILE_CREATING;
+
+	file.appendText(createExportStartSection(container_export_type));
+	for(auto scene : scenes_)
+	{
+		scene->exportToFile(file, 1, container_export_type, only_export_non_default_parameters);
+	}
+	for(auto surface_integrator : surface_integrators_)
+	{
+		file.appendText(surface_integrator->exportToString(1, container_export_type, only_export_non_default_parameters));
+	}
+	for(auto image_film : image_films_)
+	{
+		file.appendText(image_film->exportToString(1, container_export_type, only_export_non_default_parameters));
+	}
+	file.appendText(createExportEndSection(container_export_type));
+	file.close();
+	return YAFARAY_RESULT_OK;
+}
+
 std::string Container::createExportStartSection(yafaray_ContainerExportType container_export_type) const
 {
 	std::stringstream ss;
@@ -153,6 +178,5 @@ std::string Container::createExportEndSection(yafaray_ContainerExportType contai
 	}
 	return ss.str();
 }
-
 
 } //namespace yafaray

@@ -99,6 +99,7 @@ LIBYAFARAY_4.0.0 {
         yafaray_getFilmFromContainerByIndex;
         yafaray_getFilmFromContainerByName;
         yafaray_exportContainerToString;
+        yafaray_exportContainerToFile;
 
 
         # Scene functions

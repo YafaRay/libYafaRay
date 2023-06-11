@@ -49,6 +49,7 @@ class Container final
 		ImageFilm *getImageFilm(size_t index) const { if(index < scenes_.size()) return image_films_[index]; else return nullptr; }
 		ImageFilm *getImageFilm(const std::string &name) const;
 		std::string exportToString(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const;
+		yafaray_ResultFlags exportToFile(yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters, const std::string &file_path) const;
 		std::string createExportStartSection(yafaray_ContainerExportType container_export_type) const;
 		std::string createExportEndSection(yafaray_ContainerExportType container_export_type) const;
 

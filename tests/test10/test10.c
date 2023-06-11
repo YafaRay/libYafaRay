@@ -532,6 +532,7 @@ int main()
 	yafaray_addFilmToContainer(container, film_2);
 	exported_string = yafaray_exportContainerToString(container, YAFARAY_CONTAINER_EXPORT_XML, YAFARAY_BOOL_TRUE);
 	printf("**EXPORTED**\n%s\n", exported_string);
+	yafaray_exportContainerToFile(container, YAFARAY_CONTAINER_EXPORT_XML, YAFARAY_BOOL_TRUE, "test10-output.xml");
 
 	/* Destruction/deallocation */
 	yafaray_destroyCharString(exported_string);

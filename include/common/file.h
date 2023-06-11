@@ -71,6 +71,7 @@ class File final
 		template <typename T> bool read(T &value) const;
 		bool append(const std::string &str);
 		template <typename T> bool append(const T &value);
+		bool appendText(const std::string &str);
 
 	private:
 		bool save(const char *buffer, size_t size, bool with_temp);
