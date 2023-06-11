@@ -27,6 +27,7 @@ int main()
 	yafaray_ParamMap *param_map = NULL;
 	yafaray_ParamMapList *param_map_list = NULL;
 	yafaray_Logger *logger = NULL;
+	yafaray_Container *container = NULL;
 	yafaray_SurfaceIntegrator *surface_integrator = NULL;
 	yafaray_Scene *scene = NULL;
 	yafaray_Film *film = NULL;
@@ -5205,6 +5206,12 @@ int main()
 	yafaray_render(render_control, render_monitor, surface_integrator, film);
 	yafaray_destroyRenderControl(render_control);
 	yafaray_destroyRenderMonitor(render_monitor);
+
+	container = yafaray_createContainer();
+	yafaray_addSceneToContainer(container, scene);
+	yafaray_addSurfaceIntegratorToContainer(container, surface_integrator);
+	yafaray_addFilmToContainer(container, film);
+	yafaray_exportContainerToFile(container, YAFARAY_CONTAINER_EXPORT_XML, YAFARAY_BOOL_TRUE, "test02-output.xml");
 
 	/* Destruction/deallocation */
 	yafaray_destroyFilm(film);

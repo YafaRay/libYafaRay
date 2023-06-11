@@ -428,7 +428,7 @@ std::string ParamMap::exportMap(size_t indent_level, yafaray_ContainerExportType
 			{
 				bool b = false;
 				param.getVal(b);
-				ss << "<" << param_name << " bval=\"" << b << "\"/>";
+				ss << "<" << param_name << " bval=\"" << (b ? "true" : "false") << "\"/>";
 			}
 			else if(type == Parameter::Type::Float)
 			{
