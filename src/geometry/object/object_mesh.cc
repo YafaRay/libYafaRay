@@ -22,6 +22,7 @@
 #include "common/logger.h"
 #include "param/param.h"
 #include "math/interpolation.h"
+#include "material/material.h"
 #include <array>
 #include <memory>
 
@@ -301,7 +302,17 @@ std::string MeshObject::exportToString(size_t indent_level, yafaray_ContainerExp
 			ss << std::string(indent_level + 1, '\t') << "<n x=\"" << vertex_normal[0] << "\" y=\"" << vertex_normal[1] << "\" z=\"" << vertex_normal[2] << "\"/>" << std::endl;
 		}
 	}
-	for(const auto primitive : getPrimitives()) ss << primitive->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	const Material *material_previous{nullptr};
+	for(const auto primitive : getPrimitives())
+	{
+		const Material *material{primitive->getMaterial()};
+		if(material_previous != material)
+		{
+			ss << std::string(indent_level + 1, '\t') << "<material_ref sval=\"" << material->getName() << "\"/>" << std::endl;
+			material_previous = material;
+		}
+		ss << primitive->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
+	}
 	ss << std::string(indent_level, '\t') << "</object>" << std::endl;
 	return ss.str();
 	//FIXME PENDING UV and TIME_STEPS!
