@@ -261,7 +261,7 @@ bool MeshObject::smoothVerticesNormals(Logger &logger, float angle)
 			}
 		}
 	}
-	setSmooth(true, angle);
+	setAutoSmooth(angle);
 	return true;
 }
 
@@ -297,9 +297,12 @@ std::string MeshObject::exportToString(size_t indent_level, yafaray_ContainerExp
 			}
 			ss << "/>" << std::endl;
 		}
-		for(const auto &vertex_normal : time_step.vertices_normals_)
+		if(!isAutoSmooth())
 		{
-			ss << std::string(indent_level + 1, '\t') << "<n x=\"" << vertex_normal[0] << "\" y=\"" << vertex_normal[1] << "\" z=\"" << vertex_normal[2] << "\"/>" << std::endl;
+			for(const auto &vertex_normal: time_step.vertices_normals_)
+			{
+				ss << std::string(indent_level + 1, '\t') << "<n x=\"" << vertex_normal[0] << "\" y=\"" << vertex_normal[1] << "\" z=\"" << vertex_normal[2] << "\"/>" << std::endl;
+			}
 		}
 	}
 	const Material *material_previous{nullptr};

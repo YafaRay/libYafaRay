@@ -178,7 +178,7 @@ bool Scene::smoothVerticesNormals(size_t object_id, float angle)
 	}
 	if(object->hasVerticesNormals(0) && object->numVerticesNormals(0) == object->numVertices(0))
 	{
-		object->setSmooth(true, angle);
+		object->setSmooth(true);
 		return true;
 	}
 	else return object->smoothVerticesNormals(logger_, angle);
