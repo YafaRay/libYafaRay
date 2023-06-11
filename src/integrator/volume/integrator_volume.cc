@@ -61,4 +61,14 @@ Rgb VolumeIntegrator::integrate(RandomGenerator &random_generator, const Ray &ra
 	return integrate(random_generator, ray, 0);
 }
 
+std::string VolumeIntegrator::exportToString(size_t indent_level, yafaray_ContainerExportType container_export_type, bool only_export_non_default_parameters) const
+{
+	std::stringstream ss;
+	const auto param_map{getAsParamMap(only_export_non_default_parameters)};
+	ss << std::string(indent_level, '\t') << "<volume_integrator>" << std::endl;
+	ss << param_map.exportMap(indent_level + 1, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
+	ss << std::string(indent_level, '\t') << "</volume_integrator>" << std::endl;
+	return ss.str();
+}
+
 } //namespace yafaray

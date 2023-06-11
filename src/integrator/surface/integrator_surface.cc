@@ -249,6 +249,7 @@ std::string SurfaceIntegrator::exportToString(size_t indent_level, yafaray_Conta
 	ss << std::string(indent_level + 1, '\t') << "<parameters name=\"" << getName() << "\">" << std::endl;
 	ss << param_map.exportMap(indent_level + 2, container_export_type, only_export_non_default_parameters, getParamMetaMap(), {"type"});
 	ss << std::string(indent_level + 1, '\t') << "</parameters>" << std::endl;
+	if(vol_integrator_) ss << vol_integrator_->exportToString(indent_level + 1, container_export_type, only_export_non_default_parameters);
 	ss << std::string(indent_level, '\t') << "</surface_integrator>" << std::endl;
 	return ss.str();
 }
