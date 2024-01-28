@@ -114,7 +114,7 @@ int main(void)
 
 	/* YafaRay standard rendering interface */
 	/*FIXME scene = yafaray_createInterface(YAFARAY_INTERFACE_FOR_RENDERING, "test00.xml", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);*/
-	logger = yafaray_createLogger(loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	logger = yafaray_createLogger("RenderLog", loggerCallback, &result_image, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(logger, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(logger, YAFARAY_LOG_LEVEL_VERBOSE);
 

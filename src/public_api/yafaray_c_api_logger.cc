@@ -19,9 +19,9 @@
 #include "public_api/yafaray_c_api.h"
 #include "common/logger.h"
 
-yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
+yafaray_Logger *yafaray_createLogger(const char *logger_name, yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console)
 {
-	auto logger{new yafaray::Logger(logger_callback, callback_data, display_console)};
+	auto logger{new yafaray::Logger(logger_name, logger_callback, callback_data, display_console)};
 	return reinterpret_cast<yafaray_Logger *>(logger);
 }
 

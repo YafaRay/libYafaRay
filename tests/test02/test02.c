@@ -54,7 +54,7 @@ int main()
 	}
 
 	/* Creating logger */
-	logger = yafaray_createLogger(NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
+	logger = yafaray_createLogger("", NULL, NULL, YAFARAY_DISPLAY_CONSOLE_NORMAL);
 	yafaray_setConsoleLogColorsEnabled(logger, YAFARAY_BOOL_TRUE);
 	yafaray_setConsoleVerbosityLevel(logger, YAFARAY_LOG_LEVEL_VERBOSE);
 

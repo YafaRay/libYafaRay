@@ -125,7 +125,7 @@ YAFARAY_C_API_EXPORT void yafaray_addParamMapToList(yafaray_ParamMapList *param_
 YAFARAY_C_API_EXPORT void yafaray_clearParamMapList(yafaray_ParamMapList *param_map_list);
 
 /* Logger functions */
-YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
+YAFARAY_C_API_EXPORT yafaray_Logger *yafaray_createLogger(const char *logger_name, yafaray_LoggerCallback logger_callback, void *callback_data, yafaray_DisplayConsole display_console);
 YAFARAY_C_API_EXPORT void yafaray_destroyLogger(yafaray_Logger *logger);
 YAFARAY_C_API_EXPORT void yafaray_enablePrintDateTime(yafaray_Logger *logger, yafaray_Bool value);
 YAFARAY_C_API_EXPORT void yafaray_setConsoleVerbosityLevel(yafaray_Logger *logger, yafaray_LogLevel log_level);

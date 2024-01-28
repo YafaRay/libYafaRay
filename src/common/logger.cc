@@ -33,7 +33,7 @@ void Logger::saveTxtLog(const std::string &name, const Badge &badge, const Rende
 {
 	std::stringstream ss;
 
-	ss << "YafaRay Image Log file " << std::endl << std::endl;
+	ss << "YafaRay Image Log file " << (logger_name_.empty() ? "" : "(" + logger_name_ + ") ") << std::endl << std::endl;
 
 	ss << "Image: \"" << image_path_ << "\"" << std::endl << std::endl;
 
@@ -75,7 +75,7 @@ void Logger::saveHtmlLog(const std::string &name, const Badge &badge, const Rend
 	ss << "<!DOCTYPE html>" << std::endl;
 	ss << "<html lang=\"en\">" << std::endl << "<head>" << std::endl << "<meta charset=\"UTF-8\">" << std::endl;
 
-	ss << "<title>YafaRay Log: " << base_img_file_name << "." << img_extension << "</title>" << std::endl;
+	ss << "<title>YafaRay Log: " << (logger_name_.empty() ? "" : "(" + logger_name_ + ") ") << base_img_file_name << "." << img_extension << "</title>" << std::endl;
 
 	ss << "<!--[if lt IE 9]>" << std::endl << "<script src=\"http://html5shiv.googlecode.com/svn/trunk/html5.js\">" << std::endl << "</script>" << std::endl << "<![endif]-->" << std::endl << std::endl;
 
