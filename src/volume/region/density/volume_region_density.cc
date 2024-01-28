@@ -42,7 +42,6 @@ ParamMap DensityVolumeRegion::getAsParamMap(bool only_non_default) const
 DensityVolumeRegion::DensityVolumeRegion(Logger &logger, ParamResult &param_result, const ParamMap &param_map) :
 		ParentClassType_t{logger, param_result, param_map}, params_{param_result, param_map}
 {
-	if(logger.isDebug()) logger.logDebug("**" + getClassName() + " params_:\n" + getAsParamMap(true).print());
 }
 
 Rgb DensityVolumeRegion::tau(const Ray &ray, float step_size, float offset) const
