@@ -124,10 +124,6 @@ std::pair<size_t, ParamResult> Scene::createTexture(const std::string &name, con
 
 ParamResult Scene::defineBackground(const ParamMap &param_map)
 {
-	if(background_)
-	{
-		for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights()) disableLight(ibl_light_name);
-	}
 	auto [background, background_result]{Background::factory(logger_, getName() + " background", param_map, getTextures())};
 	if(!background)
 	{
@@ -138,9 +134,17 @@ ParamResult Scene::defineBackground(const ParamMap &param_map)
 	{
 		logger_.logVerbose(getClassName(), " '", this->getName(), "': Added ", background->getClassName(), " '", "", "' (", background->type().print(), ")!");
 	}
-	//logger_.logParams(result.first->getAsParamMap(true).print()); //TEST CODE ONLY, REMOVE!!
+
+	if(background->usesIblBlur()) textures_.getById(background->getTextureId()).first->useMipMaps();
+
+	if(background_)
+	{
+		for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights())
+		{
+			disableLight(ibl_light_name);
+		}
+	}
 	background_ = std::move(background);
-	if(background_->usesIblBlur()) textures_.getById(background->getTextureId()).first->useMipMaps();
 	for(const auto &[ibl_light_name, ibl_light_param_map] : background_->getRequestedIblLights())
 	{
 		createLight(ibl_light_name, ibl_light_param_map);
