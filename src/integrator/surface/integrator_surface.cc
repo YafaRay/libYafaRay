@@ -141,14 +141,14 @@ std::map<std::string, const Light *> SurfaceIntegrator::getFilteredLights(const 
 			if(light) filtered_lights[light_name] = light;
 			else
 			{
-				logger_.logWarning(getClassName() ,"'", getName(), "' init: could not find light '", light_name, "', skipping...");
+				logger_.logWarning(getClassName() ," '", getName(), "' init: could not find light '", light_name, "', skipping...");
 				continue;
 			}
 		}
 	}
 	if(filtered_lights.empty())
 	{
-		logger_.logWarning(getClassName() ,"'", getName(), "': Lights not found in the scene.");
+		logger_.logWarning(getClassName() ," '", getName(), "': Lights not found in the scene.");
 	}
 	return filtered_lights;
 }
